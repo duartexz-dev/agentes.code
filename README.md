@@ -1,22 +1,106 @@
-﻿# agentes.code
+# agentes.code
 
-## Sincronização de agentes do GitHub Copilot
+[![Sincronização de agentes](https://github.com/duartexz-dev/agentes.code/actions/workflows/sync-agents.yml/badge.svg)](https://github.com/duartexz-dev/agentes.code/actions/workflows/sync-agents.yml)
 
-O workflow [sync-agents.yml](./.github/workflows/sync-agents.yml) procura, a cada cinco minutos, arquivos `.agent.md` em qualquer nível abaixo de `.github/agents/` nos repositórios pertencentes a `duartexz-dev`. A execução também pode ser iniciada manualmente em **Actions > Synchronize Copilot agents > Run workflow**. O agendamento pode sofrer atrasos do GitHub Actions e não é instantâneo.
+Catálogo centralizado de agentes do GitHub Copilot, com sincronização automatizada de arquivos `.agent.md` entre repositórios de `duartexz-dev`.
 
-Os agentes são copiados para `agents/NOME-DO-REPOSITORIO/`, preservando o caminho relativo dentro de `.github/agents/`. Arquivos novos e alterados são sincronizados; conteúdo idêntico não gera commit. Remoções na origem não apagam arquivos do catálogo. Repositórios arquivados e o próprio catálogo são ignorados.
+`agentes.code` é um repositório de automação e catálogo: não é uma aplicação web nem um modelo de inteligência artificial. O workflow reúne definições de agentes em um único local, mantendo os arquivos organizados por repositório de origem.
 
-### Configuração dos secrets
+## Problema que o projeto resolve
 
-Em **Settings > Secrets and variables > Actions**, crie estes dois repository secrets:
+Agentes personalizados podem ficar espalhados por vários repositórios. Este projeto procura esses arquivos em cada execução e mantém cópias centralizadas, sem exigir um workflow de sincronização em cada repositório de origem.
 
-- `SOURCE_READ_TOKEN`: Fine-grained PAT da conta `duartexz-dev`, com acesso aos repositórios de origem necessários. Conceda somente **Metadata: Read-only** e **Contents: Read-only**.
-- `CATALOG_WRITE_TOKEN`: Fine-grained PAT com acesso somente a `duartexz-dev/agentes.code`. Conceda **Metadata: Read-only** e **Contents: Read and write**.
+## Como funciona
 
-Não coloque os tokens no código ou nos arquivos do repositório. O workflow usa cada token apenas para a operação correspondente: leitura das origens e gravação do catálogo.
+```mermaid
+flowchart LR
+    A["Repositórios de duartexz-dev"] --> B[".github/agents/**/*.agent.md"]
+    B --> C["GitHub Actions<br/>sync-agents.yml"]
+    C --> D["agents/REPOSITORY-NAME/"]
+    D --> E["Catálogo central<br/>agentes.code"]
+    F["Agendamento a cada 5 minutos<br/>ou execução manual"] --> C
+```
 
-### Execução e diagnóstico
+O workflow [`sync-agents.yml`](./.github/workflows/sync-agents.yml) usa a GitHub REST API para listar os repositórios próprios acessíveis ao `SOURCE_READ_TOKEN`, consultar a branch padrão e localizar recursivamente arquivos `.agent.md` sob `.github/agents/`. O conteúdo é gravado no checkout do catálogo e enviado à branch padrão usando o `CATALOG_WRITE_TOKEN`.
 
-Para executar manualmente, abra a aba **Actions**, selecione **Synchronize Copilot agents** e clique em **Run workflow**. Abra a execução para consultar o log de cada repositório e o resumo final de repositórios analisados e ignorados, agentes encontrados, novos, atualizados e inalterados, repositórios com erros e situação da execução. Erros de acesso ou leitura são informados por repositório para que os demais possam continuar; falhas ao listar repositórios indicam que é necessário conferir a validade, o acesso e as permissões de `SOURCE_READ_TOKEN`. Quando houver erros, as alterações válidas ainda são publicadas, mas a execução termina com falha e situação parcial para não aparentar sucesso completo.
+O agendamento é configurado para ocorrer a cada cinco minutos. O GitHub Actions pode atrasar execuções agendadas; portanto, a sincronização não é instantânea. Também é possível iniciar uma execução pela aba **Actions** usando `workflow_dispatch`.
 
-O commit de sincronização só é criado quando há alterações no diretório `agents/`. O workflow impede execuções simultâneas conflitantes. A configuração inicial dos dois secrets acima é necessária antes da primeira execução.
+## Estrutura do repositório
+
+```text
+.
+├── .github/
+│   ├── agents/
+│   │   └── JavaSage.agent.md
+│   └── workflows/
+│       └── sync-agents.yml
+├── agents/                       # criado/populado pelo workflow
+│   └── REPOSITORY-NAME/
+└── README.md
+```
+
+- `.github/agents/` contém arquivos de agente associados a este repositório. O catálogo central é excluído da busca de origens; portanto, esses arquivos locais não são copiados para `agents/agentes.code/`.
+- `.github/workflows/` contém a definição da automação.
+- `agents/` é o catálogo gerado com cópias dos agentes encontrados. Esse diretório ainda pode não existir antes de uma sincronização que encontre arquivos novos.
+
+## Descoberta e regras de sincronização
+
+O workflow:
+
+1. Lista os repositórios pertencentes à conta autenticada pelo token de leitura e usa `duartexz-dev` como proprietário das origens.
+2. Ignora o próprio catálogo, repositórios arquivados e repositórios sem branch padrão.
+3. Procura, recursivamente na branch padrão, arquivos com extensão `.agent.md` em `.github/agents/`.
+4. Copia cada arquivo para `agents/NOME-DO-REPOSITORIO/CAMINHO-RELATIVO`, preservando a estrutura de subpastas da origem.
+5. Compara o conteúdo antes de gravar. Arquivos novos são adicionados, arquivos modificados são atualizados e arquivos idênticos permanecem inalterados.
+6. Cria e envia um commit somente quando há alterações no catálogo.
+
+Arquivos removidos da origem **não** são excluídos automaticamente do catálogo. A automação registra falhas por repositório e continua processando as demais origens. Quando possível, publica as alterações válidas, mas encerra a execução como parcial/falha para que o problema não apareça como sucesso completo. Ações simultâneas são agrupadas para evitar gravações concorrentes.
+
+## Configuração dos secrets
+
+Antes da primeira execução, abra **Settings → Secrets and variables → Actions** neste repositório e crie os dois repository secrets abaixo. Cada token deve ser um Fine-grained Personal Access Token concedido à conta `duartexz-dev`.
+
+| Secret | Uso | Acesso mínimo |
+| --- | --- | --- |
+| `SOURCE_READ_TOKEN` | Lista e lê os repositórios de origem pela GitHub REST API. | Metadata: **Read-only**; Contents: **Read-only** nos repositórios de origem que devem ser sincronizados. |
+| `CATALOG_WRITE_TOKEN` | Faz checkout e envia os arquivos sincronizados para o catálogo. | Metadata: **Read-only**; Contents: **Read and write** somente em `duartexz-dev/agentes.code`. |
+
+O token de leitura não grava no catálogo, e o token de escrita não é usado para ler as origens. Não inclua valores de tokens no repositório, no workflow ou em logs. As permissões declaradas para o `GITHUB_TOKEN` do workflow permanecem somente leitura; a gravação usa exclusivamente `CATALOG_WRITE_TOKEN`.
+
+## Executar e acompanhar
+
+### Execução automática
+
+Depois que os secrets estiverem configurados e o workflow estiver disponível na branch padrão, o GitHub Actions tentará executá-lo a cada cinco minutos. O horário efetivo pode variar devido a atrasos do serviço.
+
+### Execução manual
+
+1. Abra a aba **Actions** do repositório.
+2. Selecione **Synchronize Copilot agents**.
+3. Clique em **Run workflow** e confirme a execução.
+
+Consulte os logs da execução e o resumo final para verificar repositórios analisados e ignorados, agentes encontrados, novos, atualizados e inalterados, repositórios com erros e a situação geral.
+
+## Diagnóstico
+
+| Sintoma | O que verificar |
+| --- | --- |
+| Um repositório privado não aparece ou gera erro de acesso | Confirme que `SOURCE_READ_TOKEN` pertence à conta correta, tem acesso àquele repositório e possui Metadata e Contents em leitura. |
+| Nenhum agente é encontrado | Confirme que os arquivos estão na branch padrão, dentro de `.github/agents/` ou subpastas, e que o nome termina exatamente em `.agent.md`. |
+| A execução termina como parcial | Consulte o resumo e os avisos por repositório. Falhas em uma origem não impedem a análise das demais; alterações válidas ainda podem ter sido enviadas. |
+| A sincronização não consegue enviar alterações | Verifique se `CATALOG_WRITE_TOKEN` está limitado ao repositório central e possui Contents em leitura e gravação. Regras de proteção da branch também podem impedir o push direto. |
+| Não aparece um commit novo | Se todos os conteúdos estiverem iguais aos arquivos do catálogo, nenhum commit é criado. Na primeira execução sem agentes encontrados, `agents/` pode continuar ausente. |
+
+## Estado e limitações
+
+- O workflow está configurado para execução agendada e manual; a agenda não garante atualização imediata.
+- A busca ocorre na branch padrão de cada repositório elegível, não em todas as branches.
+- A conta e o proprietário das origens estão configurados como `duartexz-dev` no workflow.
+- O acesso a repositórios privados depende das permissões e dos repositórios selecionados no `SOURCE_READ_TOKEN`.
+- Remoções na origem não propagam exclusões para o catálogo.
+- O conteúdo sincronizado é gerado a partir das origens. Alterações feitas manualmente nas cópias podem ser substituídas em uma execução posterior.
+- No estado atual do repositório analisado, o diretório `agents/` ainda não existe; sua criação depende de uma sincronização que encontre agentes.
+
+## Manutenção
+
+Adicione ou atualize os arquivos `.agent.md` nos repositórios de origem e envie as alterações para suas branches padrão. Aguarde a próxima execução agendada ou inicie uma execução manual. Para investigar falhas, use os logs e o resumo da execução em **Actions**; não é necessário adicionar workflows aos repositórios de origem.
