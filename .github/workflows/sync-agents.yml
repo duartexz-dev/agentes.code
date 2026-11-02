@@ -1,0 +1,289 @@
+name: Synchronize Copilot agents
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-copilot-agents
+  cancel-in-progress: false
+
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the catalog
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ secrets.CATALOG_WRITE_TOKEN }}
+
+      - name: Find and copy agents from owned repositories
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ secrets.SOURCE_READ_TOKEN }}
+          script: |
+            const fs = require('node:fs/promises');
+            const path = require('node:path');
+
+            const owner = 'duartexz-dev';
+            const catalog = process.env.GITHUB_REPOSITORY.toLowerCase();
+            const workspace = process.env.GITHUB_WORKSPACE;
+            const stats = { new: 0, updated: 0, unchanged: 0, errors: 0 };
+
+            const wait = (milliseconds) =>
+              new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+            async function requestWithRetry(request, description) {
+              for (let attempt = 0; ; attempt += 1) {
+                try {
+                  return await request();
+                } catch (error) {
+                  const status = error.status;
+                  const headers = error.response?.headers ?? {};
+                  const rateLimited =
+                    status === 429 ||
+                    (status === 403 &&
+                      (headers['x-ratelimit-remaining'] === '0' ||
+                        /secondary rate limit|abuse detection/i.test(error.message)));
+                  const retryable = rateLimited || [500, 502, 503, 504].includes(status);
+
+                  if (!retryable || attempt >= 3) {
+                    throw error;
+                  }
+
+                  const retryAfter = Number(headers['retry-after']);
+                  const resetAt = Number(headers['x-ratelimit-reset']);
+                  const delay = Number.isFinite(retryAfter) && retryAfter > 0
+                    ? Math.min(retryAfter * 1000, 300000)
+                    : rateLimited && Number.isFinite(resetAt) && resetAt > 0
+                      ? Math.min(Math.max(resetAt * 1000 - Date.now(), 1000), 300000)
+                      : 1000 * 2 ** attempt;
+
+                  core.warning(
+                    `${description} falhou temporariamente (HTTP ${status ?? 'sem resposta'}); nova tentativa em ${Math.ceil(delay / 1000)}s.`
+                  );
+                  await wait(delay);
+                }
+              }
+            }
+
+            function reportRepositoryError(repository, error) {
+              stats.errors += 1;
+              const status = error.status ? `HTTP ${error.status}` : 'erro de rede';
+              core.warning(
+                `Falha ao sincronizar ${repository.full_name} (${status}). Verifique o acesso do SOURCE_READ_TOKEN.`
+              );
+            }
+
+            let repositories = [];
+            let repositoryListingFailed = false;
+            try {
+              for (let page = 1; ; page += 1) {
+                const response = await requestWithRetry(
+                  () =>
+                    github.rest.repos.listForAuthenticatedUser({
+                      affiliation: 'owner',
+                      per_page: 100,
+                      page,
+                      sort: 'full_name',
+                    }),
+                  'Listagem de repositórios'
+                );
+                repositories.push(...response.data);
+                if (response.data.length < 100) break;
+              }
+            } catch (error) {
+              const status = error.status ? `HTTP ${error.status}` : 'erro de rede';
+              repositoryListingFailed = true;
+              stats.errors += 1;
+              core.warning(
+                `Não foi possível listar os repositórios (${status}). Verifique se SOURCE_READ_TOKEN é válido e tem Metadata: Read-only e acesso aos repositórios de duartexz-dev.`
+              );
+            }
+
+            if (!repositoryListingFailed) {
+              core.info(`Repositórios encontrados: ${repositories.length}.`);
+
+              for (const repository of repositories) {
+                if (repository.full_name.toLowerCase() === catalog) {
+                  core.info(`Ignorado (catálogo central): ${repository.full_name}.`);
+                  continue;
+                }
+                if (repository.archived) {
+                  core.info(`Ignorado (arquivado): ${repository.full_name}.`);
+                  continue;
+                }
+                if (!repository.default_branch) {
+                  core.info(`Ignorado (sem branch padrão): ${repository.full_name}.`);
+                  continue;
+                }
+                const catalogRoot = path.resolve(workspace, 'agents');
+                const repositoryDirectory = path.resolve(catalogRoot, repository.name);
+                if (!repositoryDirectory.startsWith(`${catalogRoot}${path.sep}`)) {
+                  stats.errors += 1;
+                  core.warning(`${repository.full_name}: nome de repositório inválido para o destino.`);
+                  continue;
+                }
+
+                try {
+                const branch = await requestWithRetry(
+                  () =>
+                    github.rest.repos.getBranch({
+                      owner,
+                      repo: repository.name,
+                      branch: repository.default_branch,
+                    }),
+                  `Leitura da branch de ${repository.full_name}`
+                );
+                const tree = await requestWithRetry(
+                  () =>
+                    github.rest.git.getTree({
+                      owner,
+                      repo: repository.name,
+                      tree_sha: branch.data.commit.sha,
+                      recursive: '1',
+                    }),
+                  `Leitura da árvore de ${repository.full_name}`
+                );
+
+                if (tree.data.truncated) {
+                  throw new Error('Árvore do GitHub truncada; sincronização incompleta evitada.');
+                }
+
+                const agentEntries = tree.data.tree.filter(
+                  (entry) =>
+                    entry.type === 'blob' &&
+                    entry.path.startsWith('.github/agents/') &&
+                    entry.path.endsWith('.agent.md')
+                );
+                const unsupported = agentEntries.filter(
+                  (entry) => !['100644', '100755'].includes(entry.mode)
+                );
+                if (unsupported.length > 0) {
+                  stats.errors += unsupported.length;
+                  core.warning(
+                    `${repository.full_name}: ${unsupported.length} agente(s) ignorado(s) por não ser(em) arquivo(s) regular(es).`
+                  );
+                }
+
+                const files = agentEntries.filter((entry) =>
+                  ['100644', '100755'].includes(entry.mode)
+                );
+                if (files.length === 0) {
+                  core.info(`${repository.full_name}: nenhum agente encontrado.`);
+                  continue;
+                }
+
+                const downloaded = [];
+                for (const entry of files) {
+                  const relativePath = entry.path.slice('.github/agents/'.length);
+                  const segments = relativePath.split('/');
+                  if (
+                    !relativePath ||
+                    segments.some((segment) => !segment || segment === '.' || segment === '..')
+                  ) {
+                    stats.errors += 1;
+                    core.warning(`${repository.full_name}: caminho de agente inválido ignorado.`);
+                    continue;
+                  }
+
+                  const blob = await requestWithRetry(
+                    () =>
+                      github.rest.git.getBlob({
+                        owner,
+                        repo: repository.name,
+                        file_sha: entry.sha,
+                      }),
+                    `Leitura de ${repository.full_name}/${entry.path}`
+                  );
+                  downloaded.push({
+                    relativePath,
+                    content: Buffer.from(blob.data.content, 'base64'),
+                  });
+                }
+
+                for (const file of downloaded) {
+                  const destination = path.resolve(
+                    repositoryDirectory,
+                    ...file.relativePath.split('/')
+                  );
+                  const destinationPrefix = `${repositoryDirectory}${path.sep}`;
+                  if (!destination.startsWith(destinationPrefix)) {
+                    stats.errors += 1;
+                    core.warning(`${repository.full_name}: caminho de destino inválido ignorado.`);
+                    continue;
+                  }
+
+                  let previous;
+                  try {
+                    previous = await fs.readFile(destination);
+                  } catch (error) {
+                    if (error.code !== 'ENOENT') throw error;
+                  }
+
+                  if (previous?.equals(file.content)) {
+                    stats.unchanged += 1;
+                    core.info(`Inalterado: agents/${repository.name}/${file.relativePath}`);
+                    continue;
+                  }
+
+                  await fs.mkdir(path.dirname(destination), { recursive: true });
+                  await fs.writeFile(destination, file.content);
+                  if (previous === undefined) {
+                    stats.new += 1;
+                    core.info(`Novo agente: agents/${repository.name}/${file.relativePath}`);
+                  } else {
+                    stats.updated += 1;
+                    core.info(`Agente atualizado: agents/${repository.name}/${file.relativePath}`);
+                  }
+                }
+                } catch (error) {
+                  reportRepositoryError(repository, error);
+                }
+              }
+            }
+
+            core.summary
+              .addHeading('Resumo da sincronização de agentes')
+              .addTable([
+                [
+                  { data: 'Resultado', header: true },
+                  { data: 'Quantidade', header: true },
+                ],
+                ['Novos', String(stats.new)],
+                ['Atualizados', String(stats.updated)],
+                ['Inalterados', String(stats.unchanged)],
+                ['Erros', String(stats.errors)],
+              ]);
+            await core.summary.write();
+            core.info(
+              `Resumo: ${stats.new} novo(s), ${stats.updated} atualizado(s), ${stats.unchanged} inalterado(s), ${stats.errors} erro(s).`
+            );
+            if (repositoryListingFailed) {
+              core.setFailed(
+                'Sincronização incompleta: valide SOURCE_READ_TOKEN e as permissões de leitura dos repositórios.'
+              );
+            }
+
+      - name: Commit and push catalog changes
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- agents/
+
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração no catálogo; nenhum commit será criado."
+            exit 0
+          fi
+
+          git commit -m "chore: synchronize Copilot agents"
+          git push origin "HEAD:${DEFAULT_BRANCH}"
