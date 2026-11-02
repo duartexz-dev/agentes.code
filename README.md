@@ -115,7 +115,6 @@ Esta tabela é gerada a partir dos agentes locais em `.github/agents/` e dos arq
 <!-- BEGIN AUTO-GENERATED AGENT CATALOG -->
 | Agent | Description | Source repository | File |
 | --- | --- | --- | --- |
-| Java Project Curator | Use when identifying, documenting, or integrating a new Java exercise into the BuildJava.ln project catalog, including updating its catalog object and progress graphic. | [agentes.code](https://github.com/duartexz-dev/agentes.code) | [.github/agents/JavaSage.agent.md](./.github/agents/JavaSage.agent.md) |
 | Design Orchestrator | Conduz a descoberta do produto, aprova a identidade visual e coordena especialistas, QA e auditoria de segurança. | [Avocrypto](https://github.com/duartexz-dev/Avocrypto) | [agents/Avocrypto/design-orchestrator.agent.md](./agents/Avocrypto/design-orchestrator.agent.md) |
 | Design QA/Repair | Investiga e corrige bugs confirmados de funcionamento, responsividade, acessibilidade e integração sem redesenhar o produto. | [Avocrypto](https://github.com/duartexz-dev/Avocrypto) | [agents/Avocrypto/design-qa-repair.agent.md](./agents/Avocrypto/design-qa-repair.agent.md) |
 | Design Security Auditor | Audita riscos de segurança e privacidade com análise independente somente leitura, evidências, severidade e limitações explícitas. | [Avocrypto](https://github.com/duartexz-dev/Avocrypto) | [agents/Avocrypto/design-security-auditor.agent.md](./agents/Avocrypto/design-security-auditor.agent.md) |
