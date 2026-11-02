@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out the catalog
+        id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
@@ -34,7 +35,16 @@ jobs:
             const owner = 'duartexz-dev';
             const catalog = process.env.GITHUB_REPOSITORY.toLowerCase();
             const workspace = process.env.GITHUB_WORKSPACE;
-            const stats = { new: 0, updated: 0, unchanged: 0, errors: 0 };
+            const stats = {
+              analyzedRepositories: 0,
+              ignoredRepositories: 0,
+              agentsFound: 0,
+              new: 0,
+              updated: 0,
+              unchanged: 0,
+            };
+            const repositoryErrors = new Map();
+            const globalErrors = [];
 
             const wait = (milliseconds) =>
               new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -73,12 +83,18 @@ jobs:
               }
             }
 
-            function reportRepositoryError(repository, error) {
-              stats.errors += 1;
-              const status = error.status ? `HTTP ${error.status}` : 'erro de rede';
-              core.warning(
-                `Falha ao sincronizar ${repository.full_name} (${status}). Verifique o acesso do SOURCE_READ_TOKEN.`
-              );
+            function reportRepositoryError(repository, context, error) {
+              const status = error.status
+                ? `HTTP ${error.status}`
+                : error.code
+                  ? `erro ${error.code}`
+                  : 'erro de processamento';
+              const message = `${repository.full_name}: ${context} falhou (${status}).`;
+              if (!repositoryErrors.has(repository.full_name)) {
+                repositoryErrors.set(repository.full_name, []);
+              }
+              repositoryErrors.get(repository.full_name).push(message);
+              core.warning(`${message} Verifique o acesso do SOURCE_READ_TOKEN quando aplicável.`);
             }
 
             let repositories = [];
@@ -101,10 +117,9 @@ jobs:
             } catch (error) {
               const status = error.status ? `HTTP ${error.status}` : 'erro de rede';
               repositoryListingFailed = true;
-              stats.errors += 1;
-              core.warning(
-                `Não foi possível listar os repositórios (${status}). Verifique se SOURCE_READ_TOKEN é válido e tem Metadata: Read-only e acesso aos repositórios de duartexz-dev.`
-              );
+              const message = `Não foi possível listar os repositórios (${status}). Verifique se SOURCE_READ_TOKEN é válido e tem Metadata: Read-only e acesso aos repositórios de duartexz-dev.`;
+              globalErrors.push(message);
+              core.warning(message);
             }
 
             if (!repositoryListingFailed) {
@@ -112,173 +127,199 @@ jobs:
 
               for (const repository of repositories) {
                 if (repository.full_name.toLowerCase() === catalog) {
+                  stats.ignoredRepositories += 1;
                   core.info(`Ignorado (catálogo central): ${repository.full_name}.`);
                   continue;
                 }
                 if (repository.archived) {
+                  stats.ignoredRepositories += 1;
                   core.info(`Ignorado (arquivado): ${repository.full_name}.`);
                   continue;
                 }
                 if (!repository.default_branch) {
+                  stats.ignoredRepositories += 1;
                   core.info(`Ignorado (sem branch padrão): ${repository.full_name}.`);
                   continue;
                 }
+                stats.analyzedRepositories += 1;
                 const catalogRoot = path.resolve(workspace, 'agents');
                 const repositoryDirectory = path.resolve(catalogRoot, repository.name);
                 if (!repositoryDirectory.startsWith(`${catalogRoot}${path.sep}`)) {
-                  stats.errors += 1;
-                  core.warning(`${repository.full_name}: nome de repositório inválido para o destino.`);
+                  reportRepositoryError(
+                    repository,
+                    'validação do caminho de destino',
+                    new Error('Nome de repositório inválido')
+                  );
                   continue;
                 }
 
                 try {
-                const branch = await requestWithRetry(
-                  () =>
-                    github.rest.repos.getBranch({
-                      owner,
-                      repo: repository.name,
-                      branch: repository.default_branch,
-                    }),
-                  `Leitura da branch de ${repository.full_name}`
-                );
-                const tree = await requestWithRetry(
-                  () =>
-                    github.rest.git.getTree({
-                      owner,
-                      repo: repository.name,
-                      tree_sha: branch.data.commit.sha,
-                      recursive: '1',
-                    }),
-                  `Leitura da árvore de ${repository.full_name}`
-                );
-
-                if (tree.data.truncated) {
-                  throw new Error('Árvore do GitHub truncada; sincronização incompleta evitada.');
-                }
-
-                const agentEntries = tree.data.tree.filter(
-                  (entry) =>
-                    entry.type === 'blob' &&
-                    entry.path.startsWith('.github/agents/') &&
-                    entry.path.endsWith('.agent.md')
-                );
-                const unsupported = agentEntries.filter(
-                  (entry) => !['100644', '100755'].includes(entry.mode)
-                );
-                if (unsupported.length > 0) {
-                  stats.errors += unsupported.length;
-                  core.warning(
-                    `${repository.full_name}: ${unsupported.length} agente(s) ignorado(s) por não ser(em) arquivo(s) regular(es).`
-                  );
-                }
-
-                const files = agentEntries.filter((entry) =>
-                  ['100644', '100755'].includes(entry.mode)
-                );
-                if (files.length === 0) {
-                  core.info(`${repository.full_name}: nenhum agente encontrado.`);
-                  continue;
-                }
-
-                const downloaded = [];
-                for (const entry of files) {
-                  const relativePath = entry.path.slice('.github/agents/'.length);
-                  const segments = relativePath.split('/');
-                  if (
-                    !relativePath ||
-                    segments.some((segment) => !segment || segment === '.' || segment === '..')
-                  ) {
-                    stats.errors += 1;
-                    core.warning(`${repository.full_name}: caminho de agente inválido ignorado.`);
-                    continue;
-                  }
-
-                  const blob = await requestWithRetry(
+                  const branch = await requestWithRetry(
                     () =>
-                      github.rest.git.getBlob({
+                      github.rest.repos.getBranch({
                         owner,
                         repo: repository.name,
-                        file_sha: entry.sha,
+                        branch: repository.default_branch,
                       }),
-                    `Leitura de ${repository.full_name}/${entry.path}`
+                    `Leitura da branch de ${repository.full_name}`
                   );
-                  downloaded.push({
-                    relativePath,
-                    content: Buffer.from(blob.data.content, 'base64'),
-                  });
-                }
+                  const tree = await requestWithRetry(
+                    () =>
+                      github.rest.git.getTree({
+                        owner,
+                        repo: repository.name,
+                        tree_sha: branch.data.commit.sha,
+                        recursive: '1',
+                      }),
+                    `Leitura da árvore de ${repository.full_name}`
+                  );
 
-                for (const file of downloaded) {
-                  const destination = path.resolve(
-                    repositoryDirectory,
-                    ...file.relativePath.split('/')
+                  if (tree.data.truncated) {
+                    throw new Error('Árvore do GitHub truncada; sincronização incompleta evitada.');
+                  }
+
+                  const agentEntries = tree.data.tree.filter(
+                    (entry) =>
+                      entry.type === 'blob' &&
+                      entry.path.startsWith('.github/agents/') &&
+                      entry.path.endsWith('.agent.md')
                   );
-                  const destinationPrefix = `${repositoryDirectory}${path.sep}`;
-                  if (!destination.startsWith(destinationPrefix)) {
-                    stats.errors += 1;
-                    core.warning(`${repository.full_name}: caminho de destino inválido ignorado.`);
+                  stats.agentsFound += agentEntries.length;
+
+                  const unsupported = agentEntries.filter(
+                    (entry) => !['100644', '100755'].includes(entry.mode)
+                  );
+                  for (const entry of unsupported) {
+                    reportRepositoryError(
+                      repository,
+                      `tipo de arquivo não suportado em ${entry.path}`,
+                      new Error('O agente não é um arquivo regular')
+                    );
+                  }
+
+                  const files = agentEntries.filter((entry) =>
+                    ['100644', '100755'].includes(entry.mode)
+                  );
+                  if (files.length === 0) {
+                    core.info(`${repository.full_name}: nenhum agente válido encontrado.`);
                     continue;
                   }
 
-                  let previous;
-                  try {
-                    previous = await fs.readFile(destination);
-                  } catch (error) {
-                    if (error.code !== 'ENOENT') throw error;
-                  }
+                  for (const entry of files) {
+                    const relativePath = entry.path.slice('.github/agents/'.length);
+                    const segments = relativePath.split('/');
+                    if (
+                      !relativePath ||
+                      segments.some((segment) => !segment || segment === '.' || segment === '..')
+                    ) {
+                      reportRepositoryError(
+                        repository,
+                        `validação do caminho de ${entry.path}`,
+                        new Error('Caminho relativo inválido')
+                      );
+                      continue;
+                    }
 
-                  if (previous?.equals(file.content)) {
-                    stats.unchanged += 1;
-                    core.info(`Inalterado: agents/${repository.name}/${file.relativePath}`);
-                    continue;
-                  }
+                    try {
+                      const blob = await requestWithRetry(
+                        () =>
+                          github.rest.git.getBlob({
+                            owner,
+                            repo: repository.name,
+                            file_sha: entry.sha,
+                          }),
+                        `Leitura de ${repository.full_name}/${entry.path}`
+                      );
+                      const content = Buffer.from(blob.data.content, 'base64');
+                      const destination = path.resolve(repositoryDirectory, ...segments);
+                      const destinationPrefix = `${repositoryDirectory}${path.sep}`;
+                      if (!destination.startsWith(destinationPrefix)) {
+                        throw new Error('Caminho de destino inválido');
+                      }
 
-                  await fs.mkdir(path.dirname(destination), { recursive: true });
-                  await fs.writeFile(destination, file.content);
-                  if (previous === undefined) {
-                    stats.new += 1;
-                    core.info(`Novo agente: agents/${repository.name}/${file.relativePath}`);
-                  } else {
-                    stats.updated += 1;
-                    core.info(`Agente atualizado: agents/${repository.name}/${file.relativePath}`);
+                      let previous;
+                      try {
+                        previous = await fs.readFile(destination);
+                      } catch (error) {
+                        if (error.code !== 'ENOENT') throw error;
+                      }
+
+                      if (previous?.equals(content)) {
+                        stats.unchanged += 1;
+                        core.info(`Inalterado: agents/${repository.name}/${relativePath}`);
+                        continue;
+                      }
+
+                      await fs.mkdir(path.dirname(destination), { recursive: true });
+                      await fs.writeFile(destination, content);
+                      if (previous === undefined) {
+                        stats.new += 1;
+                        core.info(`Novo agente: agents/${repository.name}/${relativePath}`);
+                      } else {
+                        stats.updated += 1;
+                        core.info(`Agente atualizado: agents/${repository.name}/${relativePath}`);
+                      }
+                    } catch (error) {
+                      reportRepositoryError(repository, `sincronização de ${entry.path}`, error);
+                    }
                   }
-                }
                 } catch (error) {
-                  reportRepositoryError(repository, error);
+                  reportRepositoryError(repository, 'leitura da branch ou da árvore', error);
                 }
               }
             }
 
+            const hasErrors = repositoryErrors.size > 0 || globalErrors.length > 0;
+            const finalStatus = hasErrors ? 'PARCIAL (com erros)' : 'COMPLETA';
+            const errorDetails = [
+              ...Array.from(repositoryErrors, ([name, messages]) =>
+                `${name}: ${messages.length} erro(s)`
+              ),
+              ...globalErrors,
+            ];
             core.summary
               .addHeading('Resumo da sincronização de agentes')
               .addTable([
                 [
-                  { data: 'Resultado', header: true },
+                  { data: 'Indicador', header: true },
                   { data: 'Quantidade', header: true },
                 ],
+                ['Repositórios analisados', String(stats.analyzedRepositories)],
+                ['Repositórios ignorados', String(stats.ignoredRepositories)],
+                ['Agentes encontrados', String(stats.agentsFound)],
                 ['Novos', String(stats.new)],
                 ['Atualizados', String(stats.updated)],
                 ['Inalterados', String(stats.unchanged)],
-                ['Erros', String(stats.errors)],
+                ['Repositórios com erros', String(repositoryErrors.size)],
+                ['Situação final', finalStatus],
               ]);
+            if (errorDetails.length > 0) {
+              core.summary.addHeading('Erros encontrados').addList(errorDetails);
+            }
             await core.summary.write();
             core.info(
-              `Resumo: ${stats.new} novo(s), ${stats.updated} atualizado(s), ${stats.unchanged} inalterado(s), ${stats.errors} erro(s).`
+              `Sincronização ${finalStatus.toLowerCase()}: ${stats.analyzedRepositories} repositório(s) analisado(s), ${stats.ignoredRepositories} ignorado(s), ${stats.agentsFound} agente(s) encontrado(s), ${stats.new} novo(s), ${stats.updated} atualizado(s), ${stats.unchanged} inalterado(s), ${repositoryErrors.size} repositório(s) com erro(s).`
             );
-            if (repositoryListingFailed) {
-              core.setFailed(
-                'Sincronização incompleta: valide SOURCE_READ_TOKEN e as permissões de leitura dos repositórios.'
-              );
+            for (const [repository, messages] of repositoryErrors) {
+              core.warning(`Resumo de erros de ${repository}: ${messages.join(' ')}`);
+            }
+            if (hasErrors || repositoryListingFailed) {
+              core.setFailed('Sincronização parcial: consulte o resumo e os logs dos repositórios com erro.');
             }
 
       - name: Commit and push catalog changes
+        if: always() && steps.checkout.outcome == 'success'
         shell: bash
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- agents/
+          if [ -d agents ]; then
+            git add -A -- agents/
+          else
+            echo "Diretório agents/ ainda não existe; nada para adicionar."
+          fi
 
           if git diff --cached --quiet; then
             echo "Nenhuma alteração no catálogo; nenhum commit será criado."

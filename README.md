@@ -17,6 +17,6 @@ Não coloque os tokens no código ou nos arquivos do repositório. O workflow us
 
 ### Execução e diagnóstico
 
-Para executar manualmente, abra a aba **Actions**, selecione **Synchronize Copilot agents** e clique em **Run workflow**. Abra a execução para consultar o log de cada repositório e o resumo final de agentes novos, atualizados, inalterados e erros. Erros de acesso ou leitura são informados por repositório para que os demais possam continuar; falhas ao listar repositórios indicam que é necessário conferir a validade, o acesso e as permissões de `SOURCE_READ_TOKEN`.
+Para executar manualmente, abra a aba **Actions**, selecione **Synchronize Copilot agents** e clique em **Run workflow**. Abra a execução para consultar o log de cada repositório e o resumo final de repositórios analisados e ignorados, agentes encontrados, novos, atualizados e inalterados, repositórios com erros e situação da execução. Erros de acesso ou leitura são informados por repositório para que os demais possam continuar; falhas ao listar repositórios indicam que é necessário conferir a validade, o acesso e as permissões de `SOURCE_READ_TOKEN`. Quando houver erros, as alterações válidas ainda são publicadas, mas a execução termina com falha e situação parcial para não aparentar sucesso completo.
 
 O commit de sincronização só é criado quando há alterações no diretório `agents/`. O workflow impede execuções simultâneas conflitantes. A configuração inicial dos dois secrets acima é necessária antes da primeira execução.
