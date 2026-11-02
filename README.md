@@ -41,10 +41,10 @@ O agendamento é configurado para ocorrer a cada cinco minutos. O GitHub Actions
 └── README.md
 ```
 
-- `.github/agents/` contém arquivos de agente associados a este repositório. O catálogo central é excluído da busca de origens; portanto, esses arquivos locais não são copiados para `agents/agentes.code/`.
+- `.github/agents/` contém os agentes locais deste repositório. Eles aparecem no catálogo com links diretos para seus arquivos, sem serem copiados para `agents/agentes.code/`.
 - `.github/workflows/` contém a definição da automação.
-- `scripts/generate-agent-catalog.mjs` lê os agentes sincronizados e atualiza somente a seção delimitada do README.
-- `agents/` é o catálogo gerado com cópias dos agentes encontrados. Esse diretório ainda pode não existir antes de uma sincronização que encontre arquivos novos.
+- `scripts/generate-agent-catalog.mjs` reúne agentes locais de `.github/agents/` e agentes sincronizados em `agents/`, atualizando somente a seção delimitada do README.
+- `agents/` contém cópias dos agentes encontrados nos repositórios de origem; os agentes locais são listados diretamente de `.github/agents/`.
 
 ## Descoberta e regras de sincronização
 
@@ -89,10 +89,10 @@ Consulte os logs da execução e o resumo final para verificar repositórios ana
 | Sintoma | O que verificar |
 | --- | --- |
 | Um repositório privado não aparece ou gera erro de acesso | Confirme que `SOURCE_READ_TOKEN` pertence à conta correta, tem acesso àquele repositório e possui Metadata e Contents em leitura. |
-| Nenhum agente é encontrado | Confirme que os arquivos estão na branch padrão, dentro de `.github/agents/` ou subpastas, e que o nome termina exatamente em `.agent.md`. |
+| Nenhum agente sincronizado é encontrado | Confirme que os arquivos estão na branch padrão dos repositórios de origem, dentro de `.github/agents/` ou subpastas, e que o nome termina exatamente em `.agent.md`. Agentes locais continuam listados a partir de `.github/agents/` neste repositório. |
 | A execução termina como parcial | Consulte o resumo e os avisos por repositório. Falhas em uma origem não impedem a análise das demais; alterações válidas ainda podem ter sido enviadas. |
 | A sincronização não consegue enviar alterações | Verifique se `CATALOG_WRITE_TOKEN` está limitado ao repositório central e possui Contents em leitura e gravação. Regras de proteção da branch também podem impedir o push direto. |
-| Não aparece um commit novo | Se todos os conteúdos estiverem iguais aos arquivos do catálogo, nenhum commit é criado. Na primeira execução sem agentes encontrados, `agents/` pode continuar ausente. |
+| Não aparece um commit novo | Se os arquivos sincronizados e a seção do README não tiverem alterações, nenhum commit é criado. `agents/` pode continuar ausente quando nenhuma origem remota tiver agentes. |
 
 ## Estado e limitações
 
@@ -102,7 +102,7 @@ Consulte os logs da execução e o resumo final para verificar repositórios ana
 - O acesso a repositórios privados depende das permissões e dos repositórios selecionados no `SOURCE_READ_TOKEN`.
 - Remoções na origem não propagam exclusões para o catálogo.
 - O conteúdo sincronizado é gerado a partir das origens. Alterações feitas manualmente nas cópias podem ser substituídas em uma execução posterior.
-- No estado atual do repositório analisado, o diretório `agents/` ainda não existe; sua criação depende de uma sincronização que encontre agentes.
+- O diretório `agents/` pode ainda não existir até que uma sincronização encontre agentes remotos; agentes locais em `.github/agents/` são catalogados mesmo sem esse diretório.
 
 ## Manutenção
 
@@ -110,8 +110,10 @@ Adicione ou atualize os arquivos `.agent.md` nos repositórios de origem e envie
 
 ## Available Agents
 
-Esta tabela é gerada a partir dos arquivos presentes em `agents/`. Cada entrada aponta para a cópia sincronizada e para o repositório de origem.
+Esta tabela é gerada a partir dos agentes locais em `.github/agents/` e dos arquivos sincronizados em `agents/`. Cada entrada aponta para o arquivo correspondente e para o repositório de origem.
 
 <!-- BEGIN AUTO-GENERATED AGENT CATALOG -->
-No agents have been synchronized yet.
+| Agent | Description | Source repository | File |
+| --- | --- | --- | --- |
+| Java Project Curator | Use when identifying, documenting, or integrating a new Java exercise into the BuildJava.ln project catalog, including updating its catalog object and progress graphic. | [agentes.code](https://github.com/duartexz-dev/agentes.code) | [.github/agents/JavaSage.agent.md](./.github/agents/JavaSage.agent.md) |
 <!-- END AUTO-GENERATED AGENT CATALOG -->

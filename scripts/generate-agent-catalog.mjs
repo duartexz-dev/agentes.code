@@ -150,7 +150,7 @@ function buildCatalog(agents) {
       compareAlphabetically(left.relativePath, right.relativePath)
   );
   const rows = sorted.map((agent) => {
-    const filePath = `agents/${agent.repository}/${agent.relativePath}`;
+    const filePath = agent.filePath;
     const fileLink = `./${encodePath(filePath)}`;
     const repositoryLink = `https://github.com/${encodeURIComponent(sourceOwner)}/${encodeURIComponent(agent.repository)}`;
     return `| ${escapeTableCell(agent.name)} | ${escapeTableCell(agent.description)} | [${escapeTableCell(agent.repository)}](${repositoryLink}) | [${escapeTableCell(filePath)}](${fileLink}) |`;
@@ -217,26 +217,41 @@ function replaceGeneratedSection(readme, catalog, newline) {
 
 export async function generateAgentCatalog(root = process.cwd()) {
   const catalogDirectory = path.join(root, 'agents');
+  const localAgentsDirectory = path.join(root, '.github', 'agents');
   const readmePath = path.join(root, 'README.md');
-  const files = await findAgentFiles(catalogDirectory);
+  const files = [
+    ...(await findAgentFiles(catalogDirectory)).map((filePath) => ({
+      filePath,
+      sourceDirectory: catalogDirectory,
+      local: false,
+    })),
+    ...(await findAgentFiles(localAgentsDirectory)).map((filePath) => ({
+      filePath,
+      sourceDirectory: localAgentsDirectory,
+      local: true,
+    })),
+  ];
   const seenPaths = new Set();
   const agents = [];
 
-  for (const filePath of files) {
-    const relativeToCatalog = path.relative(catalogDirectory, filePath);
-    const [repository, ...pathSegments] = relativeToCatalog.split(path.sep);
-    if (!repository || pathSegments.length === 0) continue;
-
-    const relativePath = pathSegments.join('/');
-    const identity = `${repository}/${relativePath}`;
+  for (const file of files) {
+    const relativePath = path.relative(file.sourceDirectory, file.filePath).split(path.sep).join('/');
+    const [repository, ...pathSegments] = relativePath.split('/');
+    if (!file.local && (!repository || pathSegments.length === 0)) continue;
+    const sourceRepository = file.local ? 'agentes.code' : repository;
+    const agentPath = file.local
+      ? `.github/agents/${relativePath}`
+      : `agents/${repository}/${pathSegments.join('/')}`;
+    const identity = `${sourceRepository}/${relativePath}`;
     if (seenPaths.has(identity)) continue;
     seenPaths.add(identity);
 
-    const metadata = parseAgentFrontmatter(await readFile(filePath, 'utf8'));
+    const metadata = parseAgentFrontmatter(await readFile(file.filePath, 'utf8'));
     agents.push({
-      repository,
+      repository: sourceRepository,
       relativePath,
-      name: metadata.name?.trim() || filenameFallback(filePath),
+      filePath: agentPath,
+      name: metadata.name?.trim() || filenameFallback(file.filePath),
       description: metadata.description?.trim() || 'Description unavailable.',
     });
   }
@@ -256,8 +271,8 @@ if (invokedPath === fileURLToPath(import.meta.url)) {
     const result = await generateAgentCatalog();
     console.log(
       result.changed
-        ? `Updated README.md with ${result.count} synchronized agent(s).`
-        : `README.md is up to date (${result.count} synchronized agent(s)).`
+        ? `Updated README.md with ${result.count} agent(s).`
+        : `README.md is up to date (${result.count} agent(s)).`
     );
   } catch (error) {
     console.error(`Unable to generate the agent catalog: ${error.message}`);
