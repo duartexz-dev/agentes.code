@@ -307,8 +307,13 @@ jobs:
               core.setFailed('Sincronização parcial: consulte o resumo e os logs dos repositórios com erro.');
             }
 
-      - name: Commit and push catalog changes
+      - name: Generate the agent catalog in README
+        id: generate_catalog
         if: always() && steps.checkout.outcome == 'success'
+        run: node scripts/generate-agent-catalog.mjs
+
+      - name: Commit and push catalog changes
+        if: always() && steps.checkout.outcome == 'success' && steps.generate_catalog.outcome == 'success'
         shell: bash
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -320,9 +325,10 @@ jobs:
           else
             echo "Diretório agents/ ainda não existe; nada para adicionar."
           fi
+          git add -A -- README.md
 
           if git diff --cached --quiet; then
-            echo "Nenhuma alteração no catálogo; nenhum commit será criado."
+            echo "Nenhuma alteração em agents/ ou README.md; nenhum commit será criado."
             exit 0
           fi
 

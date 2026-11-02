@@ -34,6 +34,8 @@ O agendamento é configurado para ocorrer a cada cinco minutos. O GitHub Actions
 │   │   └── JavaSage.agent.md
 │   └── workflows/
 │       └── sync-agents.yml
+├── scripts/
+│   └── generate-agent-catalog.mjs
 ├── agents/                       # criado/populado pelo workflow
 │   └── REPOSITORY-NAME/
 └── README.md
@@ -41,6 +43,7 @@ O agendamento é configurado para ocorrer a cada cinco minutos. O GitHub Actions
 
 - `.github/agents/` contém arquivos de agente associados a este repositório. O catálogo central é excluído da busca de origens; portanto, esses arquivos locais não são copiados para `agents/agentes.code/`.
 - `.github/workflows/` contém a definição da automação.
+- `scripts/generate-agent-catalog.mjs` lê os agentes sincronizados e atualiza somente a seção delimitada do README.
 - `agents/` é o catálogo gerado com cópias dos agentes encontrados. Esse diretório ainda pode não existir antes de uma sincronização que encontre arquivos novos.
 
 ## Descoberta e regras de sincronização
@@ -104,3 +107,11 @@ Consulte os logs da execução e o resumo final para verificar repositórios ana
 ## Manutenção
 
 Adicione ou atualize os arquivos `.agent.md` nos repositórios de origem e envie as alterações para suas branches padrão. Aguarde a próxima execução agendada ou inicie uma execução manual. Para investigar falhas, use os logs e o resumo da execução em **Actions**; não é necessário adicionar workflows aos repositórios de origem.
+
+## Available Agents
+
+Esta tabela é gerada a partir dos arquivos presentes em `agents/`. Cada entrada aponta para a cópia sincronizada e para o repositório de origem.
+
+<!-- BEGIN AUTO-GENERATED AGENT CATALOG -->
+No agents have been synchronized yet.
+<!-- END AUTO-GENERATED AGENT CATALOG -->
