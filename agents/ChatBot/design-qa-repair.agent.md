@@ -39,3 +39,9 @@ Não modifique identidade visual aprovada exceto a correção visual mínima nec
 ## Relatório obrigatório
 
 Apresente achados por gravidade com identificador, arquivo/linha, evidência e status; reparos efetuados; arquivos alterados; comandos executados e resultado; testes de navegador/dispositivo realmente realizados; limitações, verificações indisponíveis e itens pendentes. Separe bug confirmado de melhoria recomendada. Não afirme que um resultado não verificado funciona.
+
+## Integrated Agent Skills
+
+Use the skill below only for the specified task. Load its complete `SKILL.md` and relevant referenced resources on demand; do not load unrelated skills or claim a skill was activated unless it was actually loaded.
+
+- **webapp-testing** — directory: `.github/skills/webapp-testing/`. Use only for browser interaction/testing or screenshots of a local web app when Playwright and the required environment are available. Load `.github/skills/webapp-testing/SKILL.md` and its relevant resources on demand; this supplements, and must not replace, the confirmed-bug repair and reporting responsibilities above.

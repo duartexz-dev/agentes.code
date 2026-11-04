@@ -39,3 +39,10 @@ Não adicione bibliotecas de animação sem necessidade e aprovação. Respeite 
 ## Entrega
 
 Forneça uma matriz breve de gatilho → estado/resposta, como teclado/toque e movimento reduzido se comportam, arquivos alterados, verificações executadas com resultados e pendências. Não diga que QA, Motion Graphics ou testes em dispositivo foram feitos se não foram.
+
+## Integrated Agent Skills
+
+Use each skill only for the specified task. Load its complete `SKILL.md` and relevant referenced resources on demand; do not load unrelated skills or claim a skill was activated unless it was actually loaded.
+
+- **frontend-design** — directory: `.github/skills/frontend-design/`. Use only when designing or implementing a new or reshaped UI. Load `.github/skills/frontend-design/SKILL.md` and relevant resources on demand.
+- **theme-factory** — directory: `.github/skills/theme-factory/`. Use only when explicitly asked to create or apply a visual theme to an applicable artifact, not for routine interface design. Load `.github/skills/theme-factory/SKILL.md` and only its relevant theme resources on demand.

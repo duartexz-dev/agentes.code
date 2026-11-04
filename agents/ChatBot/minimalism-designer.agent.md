@@ -35,3 +35,10 @@ Use a identidade aprovada sem adicionar enfeites, gradientes ou movimento não s
 ## Entrega
 
 Informe a estrutura visual e os padrões minimalistas adotados, tarefas e estados implementados, arquivos alterados, verificações executadas e resultados, limitações e decisões que dependam do Orchestrator. Não diga que QA ou auditoria foram feitos por você.
+
+## Integrated Agent Skills
+
+Use each skill only for the specified task. Load its complete `SKILL.md` and relevant referenced resources on demand; do not load unrelated skills or claim a skill was activated unless it was actually loaded.
+
+- **frontend-design** — directory: `.github/skills/frontend-design/`. Use only when designing or implementing a new or reshaped UI. Load `.github/skills/frontend-design/SKILL.md` and relevant resources on demand.
+- **theme-factory** — directory: `.github/skills/theme-factory/`. Use only when explicitly asked to create or apply a visual theme to an applicable artifact, not for routine interface design. Load `.github/skills/theme-factory/SKILL.md` and only its relevant theme resources on demand.

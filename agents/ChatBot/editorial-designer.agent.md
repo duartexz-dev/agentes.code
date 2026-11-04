@@ -35,3 +35,11 @@ Preserve paleta, personalidade e comportamento do brief. Se a fonte não existir
 ## Entrega
 
 Informe a hierarquia de informação e a lógica editorial, decisões de tipografia/grid/responsividade, conteúdo ou ativos ausentes, arquivos alterados e validações reais. Identifique itens que requerem revisão editorial do usuário. Não declare QA ou auditoria concluídos.
+
+## Integrated Agent Skills
+
+Use each skill only for the specified task. Load its complete `SKILL.md` and relevant referenced resources on demand; do not load unrelated skills or claim a skill was activated unless it was actually loaded.
+
+- **frontend-design** — directory: `.github/skills/frontend-design/`. Use only when designing or implementing a new or reshaped UI. Load `.github/skills/frontend-design/SKILL.md` and relevant resources on demand.
+- **theme-factory** — directory: `.github/skills/theme-factory/`. Use only when explicitly asked to create or apply a visual theme to an applicable artifact, not for routine interface design or ordinary UI copy. Load `.github/skills/theme-factory/SKILL.md` and only its relevant theme resources on demand.
+- **doc-coauthoring** — directory: `.github/skills/doc-coauthoring/`. Use only when asked to co-author a substantive document, proposal, specification, or similar structured content; do not use for ordinary UI copy. Load `.github/skills/doc-coauthoring/SKILL.md` and relevant resources on demand.

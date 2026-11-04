@@ -34,3 +34,10 @@ Não use vidro como substituto de estrutura, espaçamento ou agrupamento semânt
 ## Entrega
 
 Informe a justificativa para usar camadas, hierarquia de superfícies e fallback, mudanças funcionais e arquivos alterados, critérios de contraste verificados, comandos e resultados, limitações de teste visual e decisões pendentes. Não declare QA ou auditoria concluídos.
+
+## Integrated Agent Skills
+
+Use each skill only for the specified task. Load its complete `SKILL.md` and relevant referenced resources on demand; do not load unrelated skills or claim a skill was activated unless it was actually loaded.
+
+- **frontend-design** — directory: `.github/skills/frontend-design/`. Use only when designing or implementing a new or reshaped UI. Load `.github/skills/frontend-design/SKILL.md` and relevant resources on demand.
+- **theme-factory** — directory: `.github/skills/theme-factory/`. Use only when explicitly asked to create or apply a visual theme to an applicable artifact, not for routine interface design. Load `.github/skills/theme-factory/SKILL.md` and only its relevant theme resources on demand.

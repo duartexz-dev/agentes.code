@@ -39,3 +39,13 @@ Não use animações de sequência para ocultar tempos de carregamento ou atrasa
 ## Entrega
 
 Relate a mensagem narrativa, sequência e gatilhos; diferença entre a versão animada e a alternativa de movimento reduzido; arquivos alterados; verificações/comandos executados e resultados; limitações de dispositivo ou browser. Indique explicitamente ao Orchestrator quaisquer microinterações que ficaram fora do seu escopo.
+
+## Integrated Agent Skills
+
+Use each skill only for the specified task. Load its complete `SKILL.md` and relevant referenced resources on demand; do not load unrelated skills or claim a skill was activated unless it was actually loaded.
+
+- **frontend-design** — directory: `.github/skills/frontend-design/`. Use only for a task designing or implementing a new or reshaped UI. Load `.github/skills/frontend-design/SKILL.md` and relevant resources on demand.
+- **theme-factory** — directory: `.github/skills/theme-factory/`. Use only when explicitly asked to create or apply a visual theme to an applicable artifact, not for routine design. Load `.github/skills/theme-factory/SKILL.md` and only its relevant theme resources on demand.
+- **canvas-design** — directory: `.github/skills/canvas-design/`. Use only to create original static visual artwork assets. Load `.github/skills/canvas-design/SKILL.md` and relevant resources on demand.
+- **algorithmic-art** — directory: `.github/skills/algorithmic-art/`. Use only when code-based generative visual art is explicitly requested. Load `.github/skills/algorithmic-art/SKILL.md` and relevant resources on demand.
+- **slack-gif-creator** — directory: `.github/skills/slack-gif-creator/`. Use only for a specifically Slack-optimized GIF request. Load `.github/skills/slack-gif-creator/SKILL.md` and relevant resources on demand.

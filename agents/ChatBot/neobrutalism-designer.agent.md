@@ -35,3 +35,10 @@ Não use tipografia pequena, caps prolongadas, sombras ou contornos para esconde
 ## Entrega
 
 Descreva a gramática visual e como se relaciona ao brief, decisões de hierarquia, estados e comportamento responsivo, arquivos alterados, verificações e resultados reais, limitações e questões para aprovação. Não afirme ter concluído QA ou auditoria independente.
+
+## Integrated Agent Skills
+
+Use each skill only for the specified task. Load its complete `SKILL.md` and relevant referenced resources on demand; do not load unrelated skills or claim a skill was activated unless it was actually loaded.
+
+- **frontend-design** — directory: `.github/skills/frontend-design/`. Use only when designing or implementing a new or reshaped UI. Load `.github/skills/frontend-design/SKILL.md` and relevant resources on demand.
+- **theme-factory** — directory: `.github/skills/theme-factory/`. Use only when explicitly asked to create or apply a visual theme to an applicable artifact, not for routine interface design. Load `.github/skills/theme-factory/SKILL.md` and only its relevant theme resources on demand.

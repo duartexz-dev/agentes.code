@@ -79,3 +79,21 @@ Se o harness não fornecer ferramenta de subagente ou não encontrar o agente es
 ## Entrega ao usuário
 
 Consolide objetivo e escolhas aprovadas, designer selecionado e justificativa, paleta, plataforma, arquivos criados ou alterados, funcionalidades implementadas, relatório QA, achados de segurança e estado da reauditoria, comandos executados e resultados, verificações indisponíveis e problemas remanescentes. Explique como executar o produto usando instruções existentes no projeto. Distinga inspeção de código, execução de testes e validação visual em navegador; não declare o que não aconteceu, não prometa segurança total e não transforme ausência de achados em certificação.
+
+## Integrated Agent Skills
+
+Use the skill below only for the specified task. Load its complete `SKILL.md` and relevant referenced resources on demand; do not load unrelated skills or claim a skill was activated unless it was actually loaded.
+
+- **skill-creator** — directory: `.github/skills/skill-creator/`. Use only when coordinating an explicit request to create, improve, or evaluate a skill; never for ordinary design coordination. Load `.github/skills/skill-creator/SKILL.md` and relevant resources, then route any implementation to the appropriate skill author.
+
+For ordinary design work, keep the existing handoff sequence and delegate applicable on-demand skills to the specialist, who loads them:
+
+| Specialist | Skill directory | Activate only for |
+|---|---|---|
+| Editorial Designer | `.github/skills/frontend-design/` | Designing or implementing a new or reshaped UI; also `.github/skills/doc-coauthoring/` only for requested substantive document/proposal co-authoring, not UI copy; `.github/skills/theme-factory/` only when explicitly creating/applying a visual theme to an applicable artifact. |
+| Glassmorphism, Maximalism, Minimalism, Neobrutalism, or Neumorphism Designer | `.github/skills/frontend-design/` | Designing or implementing a new or reshaped UI; `.github/skills/theme-factory/` only when explicitly creating/applying a visual theme to an applicable artifact. |
+| Motion Designer | `.github/skills/frontend-design/` | Designing or implementing a new or reshaped UI; `.github/skills/theme-factory/` only when explicitly creating/applying a visual theme to an applicable artifact. |
+| Motion Graphics Designer | `.github/skills/frontend-design/` | Only for a UI design task; `.github/skills/theme-factory/` only for an explicitly requested visual theme on an applicable artifact; `.github/skills/canvas-design/` only for original static visual artwork; `.github/skills/algorithmic-art/` only for requested code-based generative visual art; `.github/skills/slack-gif-creator/` only for a specifically Slack-optimized GIF request. |
+| Design QA/Repair | `.github/skills/webapp-testing/` | Only for browser interaction/testing or screenshots of a local web app when Playwright and its environment are available; this skill supplements, never replaces, the agent's scoped repair role. |
+
+Pass only the relevant skill path through the existing handoff. The specialist must load the complete `SKILL.md` and relevant resources on demand; do not load or assign skills to the Design Security Auditor.
