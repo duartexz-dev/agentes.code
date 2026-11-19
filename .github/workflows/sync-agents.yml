@@ -24,7 +24,8 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           token: ${{ secrets.CATALOG_WRITE_TOKEN }}
 
-      - name: Find and copy agents from owned repositories
+      - name: Discover agents from owned repositories
+        id: discover_agents
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.SOURCE_READ_TOKEN }}
@@ -34,17 +35,14 @@ jobs:
 
             const owner = 'duartexz-dev';
             const catalog = process.env.GITHUB_REPOSITORY.toLowerCase();
-            const workspace = process.env.GITHUB_WORKSPACE;
             const stats = {
               analyzedRepositories: 0,
               ignoredRepositories: 0,
               agentsFound: 0,
-              new: 0,
-              updated: 0,
-              unchanged: 0,
             };
             const repositoryErrors = new Map();
             const globalErrors = [];
+            const discoveredAgents = [];
 
             const wait = (milliseconds) =>
               new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -142,17 +140,6 @@ jobs:
                   continue;
                 }
                 stats.analyzedRepositories += 1;
-                const catalogRoot = path.resolve(workspace, 'agents');
-                const repositoryDirectory = path.resolve(catalogRoot, repository.name);
-                if (!repositoryDirectory.startsWith(`${catalogRoot}${path.sep}`)) {
-                  reportRepositoryError(
-                    repository,
-                    'validação do caminho de destino',
-                    new Error('Nome de repositório inválido')
-                  );
-                  continue;
-                }
-
                 try {
                   const branch = await requestWithRetry(
                     () =>
@@ -230,35 +217,16 @@ jobs:
                           }),
                         `Leitura de ${repository.full_name}/${entry.path}`
                       );
-                      const content = Buffer.from(blob.data.content, 'base64');
-                      const destination = path.resolve(repositoryDirectory, ...segments);
-                      const destinationPrefix = `${repositoryDirectory}${path.sep}`;
-                      if (!destination.startsWith(destinationPrefix)) {
-                        throw new Error('Caminho de destino inválido');
+                      const content = Buffer.from(blob.data.content, 'base64').toString('utf8');
+                      if (content.includes(String.fromCharCode(0))) {
+                        throw new Error('O arquivo do agente contém um caractere nulo.');
                       }
-
-                      let previous;
-                      try {
-                        previous = await fs.readFile(destination);
-                      } catch (error) {
-                        if (error.code !== 'ENOENT') throw error;
-                      }
-
-                      if (previous?.equals(content)) {
-                        stats.unchanged += 1;
-                        core.info(`Inalterado: agents/${repository.name}/${relativePath}`);
-                        continue;
-                      }
-
-                      await fs.mkdir(path.dirname(destination), { recursive: true });
-                      await fs.writeFile(destination, content);
-                      if (previous === undefined) {
-                        stats.new += 1;
-                        core.info(`Novo agente: agents/${repository.name}/${relativePath}`);
-                      } else {
-                        stats.updated += 1;
-                        core.info(`Agente atualizado: agents/${repository.name}/${relativePath}`);
-                      }
+                      discoveredAgents.push({
+                        repository: repository.name,
+                        sourcePath: entry.path,
+                        content,
+                      });
+                      core.info(`Agente encontrado: ${repository.full_name}/${entry.path}`);
                     } catch (error) {
                       reportRepositoryError(repository, `sincronização de ${entry.path}`, error);
                     }
@@ -270,6 +238,20 @@ jobs:
             }
 
             const hasErrors = repositoryErrors.size > 0 || globalErrors.length > 0;
+            const snapshotComplete = !repositoryListingFailed && !hasErrors;
+            await fs.mkdir(path.dirname(process.env.SOURCE_MANIFEST), { recursive: true });
+            await fs.writeFile(
+              process.env.SOURCE_MANIFEST,
+              JSON.stringify(
+                {
+                  complete: snapshotComplete,
+                  sources: discoveredAgents,
+                },
+                null,
+                2
+              ),
+              'utf8'
+            );
             const finalStatus = hasErrors ? 'PARCIAL (com erros)' : 'COMPLETA';
             const errorDetails = [
               ...Array.from(repositoryErrors, ([name, messages]) =>
@@ -286,10 +268,8 @@ jobs:
                 ],
                 ['Repositórios analisados', String(stats.analyzedRepositories)],
                 ['Repositórios ignorados', String(stats.ignoredRepositories)],
-                ['Agentes encontrados', String(stats.agentsFound)],
-                ['Novos', String(stats.new)],
-                ['Atualizados', String(stats.updated)],
-                ['Inalterados', String(stats.unchanged)],
+                ['Definições encontradas', String(stats.agentsFound)],
+                ['Definições coletadas', String(discoveredAgents.length)],
                 ['Repositórios com erros', String(repositoryErrors.size)],
                 ['Situação final', finalStatus],
               ]);
@@ -298,22 +278,34 @@ jobs:
             }
             await core.summary.write();
             core.info(
-              `Sincronização ${finalStatus.toLowerCase()}: ${stats.analyzedRepositories} repositório(s) analisado(s), ${stats.ignoredRepositories} ignorado(s), ${stats.agentsFound} agente(s) encontrado(s), ${stats.new} novo(s), ${stats.updated} atualizado(s), ${stats.unchanged} inalterado(s), ${repositoryErrors.size} repositório(s) com erro(s).`
+              `Varredura ${finalStatus.toLowerCase()}: ${stats.analyzedRepositories} repositório(s) analisado(s), ${stats.ignoredRepositories} ignorado(s), ${discoveredAgents.length} definição(ões) coletada(s), ${repositoryErrors.size} repositório(s) com erro(s).`
             );
             for (const [repository, messages] of repositoryErrors) {
               core.warning(`Resumo de erros de ${repository}: ${messages.join(' ')}`);
             }
             if (hasErrors || repositoryListingFailed) {
-              core.setFailed('Sincronização parcial: consulte o resumo e os logs dos repositórios com erro.');
+              core.setFailed('Varredura incompleta: o catálogo anterior foi preservado. Consulte o resumo e os logs dos repositórios com erro.');
             }
+        env:
+          SOURCE_MANIFEST: ${{ runner.temp }}/agent-sources.json
+
+      - name: Run catalog tests
+        run: node --test scripts/create-agent-catalog.test.mjs
+
+      - name: Create categorized agent files
+        id: create_catalog
+        if: steps.discover_agents.outcome == 'success'
+        run: node scripts/create-agent-catalog.mjs
+        env:
+          SOURCE_MANIFEST: ${{ runner.temp }}/agent-sources.json
 
       - name: Generate the agent catalog in README
         id: generate_catalog
-        if: always() && steps.checkout.outcome == 'success'
+        if: steps.create_catalog.outcome == 'success'
         run: node scripts/generate-agent-catalog.mjs
 
       - name: Commit and push catalog changes
-        if: always() && steps.checkout.outcome == 'success' && steps.generate_catalog.outcome == 'success'
+        if: steps.create_catalog.outcome == 'success' && steps.generate_catalog.outcome == 'success'
         shell: bash
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}

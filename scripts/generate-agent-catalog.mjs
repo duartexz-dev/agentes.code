@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -60,7 +60,7 @@ function parseBlockScalar(lines, start, style) {
   } else if (indicator.includes('+')) {
     if (content.length > 0) value += '\n';
   } else if (value) {
-    value = `${value.replace(/\n+$/, '')}\n`;
+    value = value.replace(/\n+$/, '') + '\n';
   }
 
   return { value, nextIndex: end };
@@ -90,39 +90,7 @@ export function parseAgentFrontmatter(content) {
       metadata[key] = parseScalar(rawValue);
     }
   }
-
   return metadata;
-}
-
-function compareAlphabetically(left, right) {
-  const a = left.toLocaleLowerCase('en');
-  const b = right.toLocaleLowerCase('en');
-  return a < b ? -1 : a > b ? 1 : left < right ? -1 : left > right ? 1 : 0;
-}
-
-async function findAgentFiles(directory) {
-  let entries;
-  try {
-    entries = await readdir(directory, { withFileTypes: true });
-  } catch (error) {
-    if (error.code === 'ENOENT') return [];
-    throw error;
-  }
-
-  const files = [];
-  for (const entry of entries) {
-    const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await findAgentFiles(entryPath)));
-    } else if (entry.isFile() && entry.name.endsWith('.agent.md')) {
-      files.push(entryPath);
-    }
-  }
-  return files;
-}
-
-function filenameFallback(filePath) {
-  return path.basename(filePath, '.agent.md').replace(/[-_]+/g, ' ') || 'Unnamed agent';
 }
 
 function escapeTableCell(value) {
@@ -140,142 +108,107 @@ function encodePath(relativePath) {
   return relativePath.split('/').map(encodeURIComponent).join('/');
 }
 
-function buildCatalog(agents) {
-  if (agents.length === 0) return 'No agents have been synchronized yet.';
+function projectUrl(repository) {
+  return 'https://github.com/' + encodeURIComponent(sourceOwner) + '/' + encodeURIComponent(repository);
+}
 
-  const sorted = [...agents].sort(
-    (left, right) =>
-      compareAlphabetically(left.repository, right.repository) ||
-      compareAlphabetically(left.name, right.name) ||
-      compareAlphabetically(left.relativePath, right.relativePath)
-  );
-  const rows = sorted.map((agent) => {
-    const filePath = agent.filePath;
-    const fileLink = `./${encodePath(filePath)}`;
-    const repositoryLink = `https://github.com/${encodeURIComponent(sourceOwner)}/${encodeURIComponent(agent.repository)}`;
-    return `| ${escapeTableCell(agent.name)} | ${escapeTableCell(agent.description)} | [${escapeTableCell(agent.repository)}](${repositoryLink}) | [${escapeTableCell(filePath)}](${fileLink}) |`;
+function buildCategorySection(category, entries, emptyMessage) {
+  const selected = entries
+    .filter((entry) => entry.category === category)
+    .sort((left, right) => left.name.localeCompare(right.name, 'en'));
+
+  if (selected.length === 0) {
+    return '### ' + (category === 'Projects' ? 'Específicos por projeto' : category === 'Automations' ? 'Automações' : 'Universais') + '\n\n' +
+      emptyMessage;
+  }
+
+  const rows = selected.map((entry) => {
+    const projects = [...new Set(entry.sources.map((source) => source.repository))]
+      .sort((left, right) => left.localeCompare(right, 'en'));
+    const projectLinks = projects
+      .map((repository) => '[' + escapeTableCell(repository) + '](' + projectUrl(repository) + ')')
+      .join(', ');
+    const fileLinks = entry.files
+      .map((file) => {
+        const labels = [...new Set(file.sources.map((source) => source.repository))]
+          .sort((left, right) => left.localeCompare(right, 'en'));
+        return '[' + escapeTableCell(labels.join(', ')) + '](' + encodePath(file.path) + ')';
+      })
+      .join('<br>');
+    return '| ' + escapeTableCell(entry.name) + ' | ' +
+      escapeTableCell(entry.description) + ' | ' + projectLinks + ' | ' + fileLinks + ' |';
   });
 
   return [
-    '| Agent | Description | Source repository | File |',
+    '### ' + (category === 'Projects' ? 'Project-specific' : category),
+    '',
+    '| Agente | Função | Projeto(s) | Arquivo |',
     '| --- | --- | --- | --- |',
     ...rows,
   ].join('\n');
 }
 
-function replaceGeneratedSection(readme, catalog, newline) {
-  const beginCount = readme.split(beginMarker).length - 1;
-  const endCount = readme.split(endMarker).length - 1;
-  const headings = [...readme.matchAll(/^## Available Agents[ \t]*$/gm)];
+export function buildCatalog(entries) {
+  return [
+    buildCategorySection('Automations', entries, '*Nenhum agente de automação cadastrado.*'),
+    buildCategorySection('Universals', entries, '*Nenhum agente universal cadastrado.*'),
+    buildCategorySection('Projects', entries, '*Nenhum agente específico de projeto cadastrado.*'),
+  ].join('\n\n');
+}
 
-  if (beginCount !== endCount || beginCount > 1) {
-    throw new Error(
-      'README markers are malformed or duplicated; expected exactly one matching marker pair.'
-    );
+function replaceGeneratedSection(readme, catalog) {
+  const lines = readme.split(/\r?\n/);
+  const beginIndexes = [];
+  const endIndexes = [];
+  lines.forEach((line, index) => {
+    if (line.trim() === beginMarker) beginIndexes.push(index);
+    if (line.trim() === endMarker) endIndexes.push(index);
+  });
+
+  if (beginIndexes.length === 1 && endIndexes.length === 1 && beginIndexes[0] < endIndexes[0]) {
+    lines.splice(beginIndexes[0] + 1, endIndexes[0] - beginIndexes[0] - 1, catalog);
+    return lines.join(readme.includes('\r\n') ? '\r\n' : '\n');
   }
-  if (headings.length > 1) {
-    throw new Error('README contains multiple "## Available Agents" headings.');
-  }
-
-  const block = `${beginMarker}${newline}${catalog}${newline}${endMarker}`;
-  if (beginCount === 1) {
-    const beginMatches = [...readme.matchAll(new RegExp(`^${beginMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[ \\t]*$`, 'gm'))];
-    const endMatches = [...readme.matchAll(new RegExp(`^${endMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[ \\t]*$`, 'gm'))];
-    if (beginMatches.length !== 1 || endMatches.length !== 1 || beginMatches[0].index > endMatches[0].index) {
-      throw new Error(
-        'README markers must each appear once on their own line, with BEGIN before END.'
-      );
-    }
-
-    const beginIndex = beginMatches[0].index;
-    const endLineEnd = readme.indexOf(newline, endMatches[0].index);
-    const endIndex = endLineEnd < 0 ? readme.length : endLineEnd;
-    let updated = `${readme.slice(0, beginIndex)}${block}${readme.slice(endIndex)}`;
-
-    if (headings.length === 0) {
-      const markerIndex = updated.indexOf(beginMarker);
-      updated = `${updated.slice(0, markerIndex)}## Available Agents${newline}${newline}${updated.slice(markerIndex)}`;
-    }
-    return updated;
+  if (beginIndexes.length || endIndexes.length) {
+    throw new Error('README catalog markers are malformed or duplicated.');
   }
 
-  if (headings.length === 1) {
-    const headingEnd = readme.indexOf(newline, headings[0].index);
-    if (headingEnd < 0) {
-      return `${readme}${newline}${newline}${block}${newline}`;
-    }
-    return `${readme.slice(0, headingEnd + newline.length)}${block}${newline}${readme.slice(headingEnd + newline.length)}`;
-  }
-
-  const separator = readme.endsWith(newline.repeat(2))
-    ? ''
-    : readme.endsWith(newline)
-      ? newline
-      : `${newline}${newline}`;
-  return `${readme}${separator}## Available Agents${newline}${newline}${block}${newline}`;
+  const headingIndex = lines.findIndex((line) => line.trim() === '## Catálogo de agentes');
+  const insertion = [beginMarker, catalog, endMarker];
+  if (headingIndex >= 0) lines.splice(headingIndex + 1, 0, '', ...insertion);
+  else lines.push('', '## Agent Catalog', '', ...insertion);
+  return lines.join(readme.includes('\r\n') ? '\r\n' : '\n');
 }
 
 export async function generateAgentCatalog(root = process.cwd()) {
-  const catalogDirectory = path.join(root, 'agents');
-  const localAgentsDirectory = path.join(root, '.github', 'agents');
   const readmePath = path.join(root, 'README.md');
-  const files = [
-    ...(await findAgentFiles(catalogDirectory)).map((filePath) => ({
-      filePath,
-      sourceDirectory: catalogDirectory,
-      local: false,
-    })),
-    ...(await findAgentFiles(localAgentsDirectory)).map((filePath) => ({
-      filePath,
-      sourceDirectory: localAgentsDirectory,
-      local: true,
-    })),
-  ];
-  const seenPaths = new Set();
-  const agents = [];
-
-  for (const file of files) {
-    const relativePath = path.relative(file.sourceDirectory, file.filePath).split(path.sep).join('/');
-    const [repository, ...pathSegments] = relativePath.split('/');
-    if (!file.local && (!repository || pathSegments.length === 0)) continue;
-    const sourceRepository = file.local ? 'agentes.code' : repository;
-    const agentPath = file.local
-      ? `.github/agents/${relativePath}`
-      : `agents/${repository}/${pathSegments.join('/')}`;
-    const identity = `${sourceRepository}/${relativePath}`;
-    if (seenPaths.has(identity)) continue;
-    seenPaths.add(identity);
-
-    const metadata = parseAgentFrontmatter(await readFile(file.filePath, 'utf8'));
-    agents.push({
-      repository: sourceRepository,
-      relativePath,
-      filePath: agentPath,
-      name: metadata.name?.trim() || filenameFallback(file.filePath),
-      description: metadata.description?.trim() || 'Description unavailable.',
-    });
+  const manifestPath = path.join(root, 'agents', 'catalog.json');
+  const [readme, rawManifest] = await Promise.all([
+    readFile(readmePath, 'utf8'),
+    readFile(manifestPath, 'utf8'),
+  ]);
+  const manifest = JSON.parse(rawManifest);
+  if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.entries)) {
+    throw new Error('agents/catalog.json has an unsupported format.');
   }
 
-  const readme = await readFile(readmePath, 'utf8');
-  const newline = readme.includes('\r\n') ? '\r\n' : '\n';
-  const updatedReadme = replaceGeneratedSection(readme, buildCatalog(agents), newline);
-  if (updatedReadme !== readme) {
-    await writeFile(readmePath, updatedReadme, 'utf8');
-  }
-  return { count: agents.length, changed: updatedReadme !== readme };
+  const updatedReadme = replaceGeneratedSection(readme, buildCatalog(manifest.entries));
+  if (updatedReadme !== readme) await writeFile(readmePath, updatedReadme, 'utf8');
+  return { count: manifest.entries.length, changed: updatedReadme !== readme };
 }
 
 const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : '';
 if (invokedPath === fileURLToPath(import.meta.url)) {
-  try {
-    const result = await generateAgentCatalog();
-    console.log(
-      result.changed
-        ? `Updated README.md with ${result.count} agent(s).`
-        : `README.md is up to date (${result.count} agent(s)).`
-    );
-  } catch (error) {
-    console.error(`Unable to generate the agent catalog: ${error.message}`);
-    process.exitCode = 1;
-  }
+  generateAgentCatalog()
+    .then((result) => {
+      console.log(
+        result.changed
+          ? 'Updated README.md with ' + result.count + ' agent catalog entr(y/ies).'
+          : 'README.md is up to date (' + result.count + ' agent catalog entr(y/ies)).'
+      );
+    })
+    .catch((error) => {
+      console.error('Unable to generate the agent catalog: ' + error.message);
+      process.exitCode = 1;
+    });
 }
