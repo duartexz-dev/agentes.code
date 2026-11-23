@@ -1,5 +1,5 @@
 ---
-name: Design Orchestrator
+name: "Designer Orchestrator"
 description: Conduz a descoberta do produto, aprova a identidade visual e coordena especialistas, QA e auditoria de segurança.
 target: vscode
 tools: ['agent', 'read', 'search', 'web']
