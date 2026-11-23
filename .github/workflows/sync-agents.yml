@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
+  pull_request:
 
 permissions:
   contents: read
@@ -21,11 +22,15 @@ jobs:
         id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.repository.default_branch }}
-          token: ${{ secrets.CATALOG_WRITE_TOKEN }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.repository.default_branch }}
+          token: ${{ github.event_name == 'pull_request' && github.token || secrets.CATALOG_WRITE_TOKEN }}
+
+      - name: Run catalog tests
+        run: node --test scripts/create-agent-catalog.test.mjs
 
       - name: Discover agents from owned repositories
         id: discover_agents
+        if: github.event_name != 'pull_request'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.SOURCE_READ_TOKEN }}
@@ -289,23 +294,20 @@ jobs:
         env:
           SOURCE_MANIFEST: ${{ runner.temp }}/agent-sources.json
 
-      - name: Run catalog tests
-        run: node --test scripts/create-agent-catalog.test.mjs
-
       - name: Create categorized agent files
         id: create_catalog
-        if: steps.discover_agents.outcome == 'success'
+        if: github.event_name != 'pull_request' && steps.discover_agents.outcome == 'success'
         run: node scripts/create-agent-catalog.mjs
         env:
           SOURCE_MANIFEST: ${{ runner.temp }}/agent-sources.json
 
       - name: Generate the agent catalog in README
         id: generate_catalog
-        if: steps.create_catalog.outcome == 'success'
+        if: github.event_name != 'pull_request' && steps.create_catalog.outcome == 'success'
         run: node scripts/generate-agent-catalog.mjs
 
       - name: Commit and push catalog changes
-        if: steps.create_catalog.outcome == 'success' && steps.generate_catalog.outcome == 'success'
+        if: github.event_name != 'pull_request' && steps.create_catalog.outcome == 'success' && steps.generate_catalog.outcome == 'success'
         shell: bash
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
