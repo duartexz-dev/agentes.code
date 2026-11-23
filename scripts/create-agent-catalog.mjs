@@ -32,14 +32,22 @@ function normalizeIdentity(value) {
 }
 
 function categoryFromSourcePath(sourcePath) {
-  const segments = String(sourcePath).replace(/\\/g, '/').split('/').map(normalizeIdentity);
-  if (segments.some((segment) => ['automation', 'automations', 'automacao', 'automacoes'].includes(segment))) {
+  const normalizedPath = String(sourcePath).replace(/\\/g, '/');
+  const agentsPrefix = '.github/agents/';
+  if (!normalizedPath.startsWith(agentsPrefix)) return null;
+
+  // Only the first folder directly under .github/agents/ declares a category.
+  const categoryFolder = normalizeIdentity(
+    normalizedPath.slice(agentsPrefix.length).split('/')[0]
+  );
+
+  if (['automation', 'automations', 'automacao', 'automacoes'].includes(categoryFolder)) {
     return 'Automations';
   }
-  if (segments.some((segment) => ['universal', 'universals', 'universais'].includes(segment))) {
+  if (['universal', 'universals', 'universais'].includes(categoryFolder)) {
     return 'Universals';
   }
-  if (segments.some((segment) => ['project', 'projects', 'projeto', 'projetos'].includes(segment))) {
+  if (['project', 'projects', 'projeto', 'projetos'].includes(categoryFolder)) {
     return 'Projects';
   }
   return null;
@@ -54,7 +62,12 @@ function validateSource(source) {
   const sourcePath = String(source.sourcePath ?? '').replace(/\\/g, '/');
   const segments = sourcePath.split('/');
 
-  if (!repository || !/^[a-zA-Z0-9._-]+$/.test(repository)) {
+  if (
+    !repository ||
+    repository === '.' ||
+    repository === '..' ||
+    !/^[a-zA-Z0-9._-]+$/.test(repository)
+  ) {
     throw new Error('Invalid source repository name: ' + repository);
   }
   if (
