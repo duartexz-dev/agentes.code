@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "entries": [
     {
-      "category": "Universals",
+      "category": "Projects",
       "identity": "design-qa-repair",
       "name": "Design QA/Repair",
       "description": "Investiga e corrige bugs confirmados de funcionamento, responsividade, acessibilidade e integração sem redesenhar o produto.",
@@ -10,35 +10,14 @@
         {
           "repository": "Avocrypto",
           "path": ".github/agents/design-qa-repair.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/design-qa-repair.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/design-qa-repair.agent.md"
         }
       ],
       "files": [
         {
-          "path": "agents/Universals/design-qa-repair/avocrypto-a03ed2fb.agent.md",
+          "path": "agents/Projects/Avocrypto/design-qa-repair.agent.md",
           "sources": [
             {
               "repository": "Avocrypto",
-              "path": ".github/agents/design-qa-repair.agent.md"
-            }
-          ]
-        },
-        {
-          "path": "agents/Universals/design-qa-repair/shared-5dbe623d.agent.md",
-          "sources": [
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/design-qa-repair.agent.md"
-            },
-            {
-              "repository": "ChatBot",
               "path": ".github/agents/design-qa-repair.agent.md"
             }
           ]
@@ -46,7 +25,7 @@
       ]
     },
     {
-      "category": "Universals",
+      "category": "Projects",
       "identity": "design-security-auditor",
       "name": "Design Security Auditor",
       "description": "Audita riscos de segurança e privacidade com análise independente somente leitura, evidências, severidade e limitações explícitas.",
@@ -54,30 +33,14 @@
         {
           "repository": "Avocrypto",
           "path": ".github/agents/design-security-auditor.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/design-security-auditor.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/design-security-auditor.agent.md"
         }
       ],
       "files": [
         {
-          "path": "agents/Universals/design-security-auditor.agent.md",
+          "path": "agents/Projects/Avocrypto/design-security-auditor.agent.md",
           "sources": [
             {
               "repository": "Avocrypto",
-              "path": ".github/agents/design-security-auditor.agent.md"
-            },
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/design-security-auditor.agent.md"
-            },
-            {
-              "repository": "ChatBot",
               "path": ".github/agents/design-security-auditor.agent.md"
             }
           ]
@@ -85,7 +48,7 @@
       ]
     },
     {
-      "category": "Universals",
+      "category": "Projects",
       "identity": "design-orchestrator",
       "name": "Designer Orchestrator",
       "description": "Conduz a descoberta do produto, aprova a identidade visual e coordena especialistas, QA e auditoria de segurança.",
@@ -93,35 +56,14 @@
         {
           "repository": "Avocrypto",
           "path": ".github/agents/design-orchestrator.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/design-orchestrator.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/design-orchestrator.agent.md"
         }
       ],
       "files": [
         {
-          "path": "agents/Universals/design-orchestrator/avocrypto-6bc80450.agent.md",
+          "path": "agents/Projects/Avocrypto/design-orchestrator.agent.md",
           "sources": [
             {
               "repository": "Avocrypto",
-              "path": ".github/agents/design-orchestrator.agent.md"
-            }
-          ]
-        },
-        {
-          "path": "agents/Universals/design-orchestrator/shared-297681ae.agent.md",
-          "sources": [
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/design-orchestrator.agent.md"
-            },
-            {
-              "repository": "ChatBot",
               "path": ".github/agents/design-orchestrator.agent.md"
             }
           ]
@@ -129,7 +71,7 @@
       ]
     },
     {
-      "category": "Universals",
+      "category": "Projects",
       "identity": "editorial-designer",
       "name": "Editorial Designer",
       "description": "Estrutura experiências orientadas a conteúdo com direção tipográfica, grid, ritmo de leitura e hierarquia editorial.",
@@ -137,35 +79,14 @@
         {
           "repository": "Avocrypto",
           "path": ".github/agents/editorial-designer.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/editorial-designer.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/editorial-designer.agent.md"
         }
       ],
       "files": [
         {
-          "path": "agents/Universals/editorial-designer/avocrypto-349b841b.agent.md",
+          "path": "agents/Projects/Avocrypto/editorial-designer.agent.md",
           "sources": [
             {
               "repository": "Avocrypto",
-              "path": ".github/agents/editorial-designer.agent.md"
-            }
-          ]
-        },
-        {
-          "path": "agents/Universals/editorial-designer/shared-1101574f.agent.md",
-          "sources": [
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/editorial-designer.agent.md"
-            },
-            {
-              "repository": "ChatBot",
               "path": ".github/agents/editorial-designer.agent.md"
             }
           ]
@@ -173,7 +94,7 @@
       ]
     },
     {
-      "category": "Universals",
+      "category": "Projects",
       "identity": "glassmorphism-designer",
       "name": "Glassmorphism Designer",
       "description": "Cria interfaces em camadas com transparência e desfoque, preservando contraste, legibilidade e alternativas acessíveis.",
@@ -181,300 +102,15 @@
         {
           "repository": "Avocrypto",
           "path": ".github/agents/glassmorphism-designer.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/glassmorphism-designer.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/glassmorphism-designer.agent.md"
         }
       ],
       "files": [
         {
-          "path": "agents/Universals/glassmorphism-designer/avocrypto-667c4ef4.agent.md",
+          "path": "agents/Projects/Avocrypto/glassmorphism-designer.agent.md",
           "sources": [
             {
               "repository": "Avocrypto",
               "path": ".github/agents/glassmorphism-designer.agent.md"
-            }
-          ]
-        },
-        {
-          "path": "agents/Universals/glassmorphism-designer/shared-fbe1507f.agent.md",
-          "sources": [
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/glassmorphism-designer.agent.md"
-            },
-            {
-              "repository": "ChatBot",
-              "path": ".github/agents/glassmorphism-designer.agent.md"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "category": "Universals",
-      "identity": "maximalism-designer",
-      "name": "Maximalism Designer",
-      "description": "Cria interfaces expressivas com composição, cor e tipografia de personalidade, sem sacrificar legibilidade ou usabilidade.",
-      "sources": [
-        {
-          "repository": "Avocrypto",
-          "path": ".github/agents/maximalism-designer.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/maximalism-designer.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/maximalism-designer.agent.md"
-        }
-      ],
-      "files": [
-        {
-          "path": "agents/Universals/maximalism-designer/avocrypto-fa5a4a02.agent.md",
-          "sources": [
-            {
-              "repository": "Avocrypto",
-              "path": ".github/agents/maximalism-designer.agent.md"
-            }
-          ]
-        },
-        {
-          "path": "agents/Universals/maximalism-designer/shared-e7ea145b.agent.md",
-          "sources": [
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/maximalism-designer.agent.md"
-            },
-            {
-              "repository": "ChatBot",
-              "path": ".github/agents/maximalism-designer.agent.md"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "category": "Universals",
-      "identity": "minimalism-designer",
-      "name": "Minimalism Designer",
-      "description": "Implementa interfaces minimalistas com hierarquia clara, tipografia consistente, espaços intencionais e navegação simples.",
-      "sources": [
-        {
-          "repository": "Avocrypto",
-          "path": ".github/agents/minimalism-designer.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/minimalism-designer.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/minimalism-designer.agent.md"
-        }
-      ],
-      "files": [
-        {
-          "path": "agents/Universals/minimalism-designer/avocrypto-f86c1f47.agent.md",
-          "sources": [
-            {
-              "repository": "Avocrypto",
-              "path": ".github/agents/minimalism-designer.agent.md"
-            }
-          ]
-        },
-        {
-          "path": "agents/Universals/minimalism-designer/shared-f47aa2ef.agent.md",
-          "sources": [
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/minimalism-designer.agent.md"
-            },
-            {
-              "repository": "ChatBot",
-              "path": ".github/agents/minimalism-designer.agent.md"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "category": "Universals",
-      "identity": "motion-designer",
-      "name": "Motion Designer",
-      "description": "Implementa microinterações, feedback, estados e transições de interface funcionais, responsivos e acessíveis.",
-      "sources": [
-        {
-          "repository": "Avocrypto",
-          "path": ".github/agents/motion-designer.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/motion-designer.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/motion-designer.agent.md"
-        }
-      ],
-      "files": [
-        {
-          "path": "agents/Universals/motion-designer/avocrypto-7cb2fb64.agent.md",
-          "sources": [
-            {
-              "repository": "Avocrypto",
-              "path": ".github/agents/motion-designer.agent.md"
-            }
-          ]
-        },
-        {
-          "path": "agents/Universals/motion-designer/shared-39799991.agent.md",
-          "sources": [
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/motion-designer.agent.md"
-            },
-            {
-              "repository": "ChatBot",
-              "path": ".github/agents/motion-designer.agent.md"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "category": "Universals",
-      "identity": "motion-graphics-designer",
-      "name": "Motion Graphics Designer",
-      "description": "Cria movimento gráfico e narrativas animadas com tipografia, ilustração e transições de cena, distintos das microinterações de interface.",
-      "sources": [
-        {
-          "repository": "Avocrypto",
-          "path": ".github/agents/motion-graphics-designer.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/motion-graphics-designer.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/motion-graphics-designer.agent.md"
-        }
-      ],
-      "files": [
-        {
-          "path": "agents/Universals/motion-graphics-designer/avocrypto-3f93b718.agent.md",
-          "sources": [
-            {
-              "repository": "Avocrypto",
-              "path": ".github/agents/motion-graphics-designer.agent.md"
-            }
-          ]
-        },
-        {
-          "path": "agents/Universals/motion-graphics-designer/shared-a8e1d248.agent.md",
-          "sources": [
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/motion-graphics-designer.agent.md"
-            },
-            {
-              "repository": "ChatBot",
-              "path": ".github/agents/motion-graphics-designer.agent.md"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "category": "Universals",
-      "identity": "neobrutalism-designer",
-      "name": "Neobrutalism Designer",
-      "description": "Cria interfaces neo-brutalistas com geometria, bordas, contraste e personalidade sem comprometer acessibilidade ou usabilidade.",
-      "sources": [
-        {
-          "repository": "Avocrypto",
-          "path": ".github/agents/neobrutalism-designer.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/neobrutalism-designer.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/neobrutalism-designer.agent.md"
-        }
-      ],
-      "files": [
-        {
-          "path": "agents/Universals/neobrutalism-designer/avocrypto-2b3493e3.agent.md",
-          "sources": [
-            {
-              "repository": "Avocrypto",
-              "path": ".github/agents/neobrutalism-designer.agent.md"
-            }
-          ]
-        },
-        {
-          "path": "agents/Universals/neobrutalism-designer/shared-0c652a20.agent.md",
-          "sources": [
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/neobrutalism-designer.agent.md"
-            },
-            {
-              "repository": "ChatBot",
-              "path": ".github/agents/neobrutalism-designer.agent.md"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "category": "Universals",
-      "identity": "neumorphism-designer",
-      "name": "Neumorphism Designer",
-      "description": "Projeta superfícies e controles táteis com profundidade suave, limites reconhecíveis, contraste e acessibilidade.",
-      "sources": [
-        {
-          "repository": "Avocrypto",
-          "path": ".github/agents/neumorphism-designer.agent.md"
-        },
-        {
-          "repository": "BuildJava.ln",
-          "path": ".github/agents/neumorphism-designer.agent.md"
-        },
-        {
-          "repository": "ChatBot",
-          "path": ".github/agents/neumorphism-designer.agent.md"
-        }
-      ],
-      "files": [
-        {
-          "path": "agents/Universals/neumorphism-designer/avocrypto-4d436e44.agent.md",
-          "sources": [
-            {
-              "repository": "Avocrypto",
-              "path": ".github/agents/neumorphism-designer.agent.md"
-            }
-          ]
-        },
-        {
-          "path": "agents/Universals/neumorphism-designer/shared-26280f14.agent.md",
-          "sources": [
-            {
-              "repository": "BuildJava.ln",
-              "path": ".github/agents/neumorphism-designer.agent.md"
-            },
-            {
-              "repository": "ChatBot",
-              "path": ".github/agents/neumorphism-designer.agent.md"
             }
           ]
         }
@@ -498,6 +134,144 @@
             {
               "repository": "BuildJava.ln",
               "path": ".github/agents/JavaSage.agent.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Projects",
+      "identity": "maximalism-designer",
+      "name": "Maximalism Designer",
+      "description": "Cria interfaces expressivas com composição, cor e tipografia de personalidade, sem sacrificar legibilidade ou usabilidade.",
+      "sources": [
+        {
+          "repository": "Avocrypto",
+          "path": ".github/agents/maximalism-designer.agent.md"
+        }
+      ],
+      "files": [
+        {
+          "path": "agents/Projects/Avocrypto/maximalism-designer.agent.md",
+          "sources": [
+            {
+              "repository": "Avocrypto",
+              "path": ".github/agents/maximalism-designer.agent.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Projects",
+      "identity": "minimalism-designer",
+      "name": "Minimalism Designer",
+      "description": "Implementa interfaces minimalistas com hierarquia clara, tipografia consistente, espaços intencionais e navegação simples.",
+      "sources": [
+        {
+          "repository": "Avocrypto",
+          "path": ".github/agents/minimalism-designer.agent.md"
+        }
+      ],
+      "files": [
+        {
+          "path": "agents/Projects/Avocrypto/minimalism-designer.agent.md",
+          "sources": [
+            {
+              "repository": "Avocrypto",
+              "path": ".github/agents/minimalism-designer.agent.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Projects",
+      "identity": "motion-designer",
+      "name": "Motion Designer",
+      "description": "Implementa microinterações, feedback, estados e transições de interface funcionais, responsivos e acessíveis.",
+      "sources": [
+        {
+          "repository": "Avocrypto",
+          "path": ".github/agents/motion-designer.agent.md"
+        }
+      ],
+      "files": [
+        {
+          "path": "agents/Projects/Avocrypto/motion-designer.agent.md",
+          "sources": [
+            {
+              "repository": "Avocrypto",
+              "path": ".github/agents/motion-designer.agent.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Projects",
+      "identity": "motion-graphics-designer",
+      "name": "Motion Graphics Designer",
+      "description": "Cria movimento gráfico e narrativas animadas com tipografia, ilustração e transições de cena, distintos das microinterações de interface.",
+      "sources": [
+        {
+          "repository": "Avocrypto",
+          "path": ".github/agents/motion-graphics-designer.agent.md"
+        }
+      ],
+      "files": [
+        {
+          "path": "agents/Projects/Avocrypto/motion-graphics-designer.agent.md",
+          "sources": [
+            {
+              "repository": "Avocrypto",
+              "path": ".github/agents/motion-graphics-designer.agent.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Projects",
+      "identity": "neobrutalism-designer",
+      "name": "Neobrutalism Designer",
+      "description": "Cria interfaces neo-brutalistas com geometria, bordas, contraste e personalidade sem comprometer acessibilidade ou usabilidade.",
+      "sources": [
+        {
+          "repository": "Avocrypto",
+          "path": ".github/agents/neobrutalism-designer.agent.md"
+        }
+      ],
+      "files": [
+        {
+          "path": "agents/Projects/Avocrypto/neobrutalism-designer.agent.md",
+          "sources": [
+            {
+              "repository": "Avocrypto",
+              "path": ".github/agents/neobrutalism-designer.agent.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Projects",
+      "identity": "neumorphism-designer",
+      "name": "Neumorphism Designer",
+      "description": "Projeta superfícies e controles táteis com profundidade suave, limites reconhecíveis, contraste e acessibilidade.",
+      "sources": [
+        {
+          "repository": "Avocrypto",
+          "path": ".github/agents/neumorphism-designer.agent.md"
+        }
+      ],
+      "files": [
+        {
+          "path": "agents/Projects/Avocrypto/neumorphism-designer.agent.md",
+          "sources": [
+            {
+              "repository": "Avocrypto",
+              "path": ".github/agents/neumorphism-designer.agent.md"
             }
           ]
         }

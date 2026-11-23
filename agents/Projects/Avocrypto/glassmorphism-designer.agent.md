@@ -1,5 +1,5 @@
 ---
-name: Glassmorphism Designer
+name: "Glassmorphism Designer"
 description: Cria interfaces em camadas com transparência e desfoque, preservando contraste, legibilidade e alternativas acessíveis.
 target: vscode
 user-invocable: false

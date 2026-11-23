@@ -1,5 +1,5 @@
 ---
-name: Design Security Auditor
+name: "Design Security Auditor"
 description: Audita riscos de segurança e privacidade com análise independente somente leitura, evidências, severidade e limitações explícitas.
 target: vscode
 user-invocable: false

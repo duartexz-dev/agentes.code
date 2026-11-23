@@ -1,5 +1,5 @@
 ---
-name: Motion Graphics Designer
+name: "Motion Graphics Designer"
 description: Cria movimento gráfico e narrativas animadas com tipografia, ilustração e transições de cena, distintos das microinterações de interface.
 target: vscode
 user-invocable: false

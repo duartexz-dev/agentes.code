@@ -1,5 +1,5 @@
 ---
-name: JavaSage
+name: "JavaSage"
 description: "Maintain BuildJava.ln by registering Java projects and reviewing source, catalogue, Markdown, and educational-comment consistency."
 argument-hint: "Choose: Adicionar projeto or Revisar projetos."
 tools: ['read', 'search', 'edit', 'execute']
