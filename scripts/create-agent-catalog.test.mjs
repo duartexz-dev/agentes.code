@@ -137,7 +137,7 @@ test('categorized catalog materializes automation, universal, and project files'
     });
     assert.ok(manifest.entries.some((entry) =>
       entry.category === 'Automations' &&
-      entry.files.some((file) => file.path === 'agents/Automations/release.agent.md')
+      entry.files.some((file) => file.path === 'agents/Automations/release-assistant.agent.md')
     ));
     assert.ok(manifest.entries.some((entry) =>
       entry.category === 'Universals' &&
