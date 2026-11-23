@@ -33,11 +33,13 @@ description: Descreve a função do agente.
 Instruções do agente.
 ```
 
-Para escolher uma categoria manualmente, use uma destas pastas:
+Para escolher uma categoria manualmente, use uma destas pastas diretamente dentro de `.github/agents/`:
 
 - `.github/agents/Automations/` → **Automações**.
 - `.github/agents/Universals/` → **Universais**.
-- `.github/agents/` → classificação automática pelo nome e pelos projetos em que aparece.
+- `.github/agents/` sem uma dessas pastas → classificação automática.
+
+A classificação automática considera o nome declarado no frontmatter: se o mesmo agente aparecer em dois ou mais repositórios, ele será **Universal**; caso contrário, ficará em **Específicos por projeto**. A pasta de categoria é reconhecida somente no primeiro nível de `.github/agents/`; subpastas comuns não alteram a classificação.
 
 Envie o arquivo para a branch padrão do repositório. A sincronização cria a cópia categorizada neste catálogo sem alterar o arquivo original.
 
