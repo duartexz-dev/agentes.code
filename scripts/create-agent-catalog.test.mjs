@@ -103,3 +103,77 @@ test('different universal definitions are preserved as separate variants', async
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('nested folders named after categories do not override automatic classification', () => {
+  const sources = [
+    agent('ProjectA', 'release.agent.md', definition('Release Helper'), 'Documentation/Automations'),
+    agent('ProjectB', 'layout.agent.md', definition('Layout Helper'), 'Guides/Universals'),
+    agent('ProjectC', 'notes.agent.md', definition('Notes Helper'), 'Archive/Projects'),
+  ];
+
+  assert.deepEqual(classifyAgentSources(sources).map((item) => item.category), [
+    'Projects',
+    'Projects',
+    'Projects',
+  ]);
+});
+
+test('categorized catalog materializes automation, universal, and project files', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'agentes-code-test-'));
+  try {
+    const sharedDefinition = definition('Shared Designer');
+    const result = await buildCategorizedCatalog([
+      agent('OpsProject', 'release.agent.md', definition('Release Assistant'), 'Automations'),
+      agent('ProjectA', 'designer.agent.md', sharedDefinition),
+      agent('ProjectB', 'designer.agent.md', sharedDefinition),
+      agent('BuildJava.ln', 'JavaSage.agent.md', definition('JavaSage')),
+    ], root);
+
+    const manifest = JSON.parse(await readFile(path.join(root, 'agents', 'catalog.json'), 'utf8'));
+    assert.deepEqual(result.counts, {
+      Automations: 1,
+      Universals: 1,
+      Projects: 1,
+    });
+    assert.ok(manifest.entries.some((entry) =>
+      entry.category === 'Automations' &&
+      entry.files.some((file) => file.path === 'agents/Automations/release.agent.md')
+    ));
+    assert.ok(manifest.entries.some((entry) =>
+      entry.category === 'Universals' &&
+      entry.files.some((file) => file.path === 'agents/Universals/shared-designer.agent.md')
+    ));
+    assert.ok(manifest.entries.some((entry) =>
+      entry.category === 'Projects' &&
+      entry.files.some((file) => file.path === 'agents/Projects/BuildJava.ln/JavaSage.agent.md')
+    ));
+
+    for (const entry of manifest.entries) {
+      for (const file of entry.files) {
+        const absolutePath = path.join(root, file.path);
+        const written = await readFile(absolutePath, 'utf8');
+        assert.ok(written.length > 0, file.path + ' must be materialized');
+      }
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('source validation rejects traversal paths and repository names', () => {
+  assert.throws(() => classifyAgentSources([
+    {
+      repository: 'ProjectA',
+      sourcePath: '.github/agents/../../outside.agent.md',
+      content: definition('Unsafe Agent'),
+    },
+  ]), /Invalid agent source path/);
+
+  assert.throws(() => classifyAgentSources([
+    {
+      repository: '..',
+      sourcePath: '.github/agents/agent.agent.md',
+      content: definition('Unsafe Agent'),
+    },
+  ]), /Invalid source repository name/);
+});
